@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tiny-tts"
+version = "0.1.0"
+description = "Ultra-lightweight English text-to-speech model (~9M params, ~20MB)"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+dependencies = [
+    "torch>=2.0",
+    "torchaudio>=2.0",
+    "soundfile",
+    "g2p-en",
+    "transformers",
+    "numba",
+    "huggingface_hub",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "flake8",
+]
+
+[project.scripts]
+tiny-tts = "tiny_tts.infer:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tiny_tts*"]

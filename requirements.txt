@@ -1,0 +1,9 @@
+torch>=2.0.0
+torchaudio>=2.0.0
+soundfile
+g2p-en
+transformers
+nltk
+numba
+gradio
+huggingface_hub
