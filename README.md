@@ -117,7 +117,7 @@ tts.speak(paragraph, output_path="paragraph.wav")
 
 **🔊 Listen to the result (3.5 seconds) - [Download WAV](assets/paragraph.wav)**
 
-https://github.com/tronghieuit/tiny-tts/raw/main/assets/paragraph.mp4
+https://github.com/tronghieuit/tiny-tts/raw/develop/assets/paragraph.mp4
 
 ---
 
