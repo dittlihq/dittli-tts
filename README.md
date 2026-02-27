@@ -101,9 +101,23 @@ from tiny_tts import TinyTTS
 tts = TinyTTS()
 # OR specify a custom checkpoint: tts = TinyTTS(checkpoint_path="...")
 
-# Synthesize speech
+# Synthesize a single sentence
 tts.speak("Hello, this is a test of the Python API.", output_path="hello.wav")
+
+# Synthesize a long paragraph (5 sentences)
+paragraph = (
+    "TinyTTS is an ultra-lightweight text-to-speech model. "
+    "It has only nine million parameters, which makes it extremely fast. "
+    "You can run it easily on your local CPU without a dedicated graphics card. "
+    "The audio quality remains surprisingly clear despite the small model size. "
+    "I hope you enjoy building exciting applications with it!"
+)
+tts.speak(paragraph, output_path="paragraph.wav")
 ```
+
+**🔊 Listen to the result (3.5 seconds) - [Download WAV](assets/paragraph.wav)**
+
+https://github.com/tronghieuit/tiny-tts/raw/main/assets/paragraph.mp4
 
 ---
 
@@ -144,14 +158,17 @@ Benchmarked on real hardware with the sentence:
 
 > On GPU, TinyTTS synthesizes 3.77s of audio in just 0.056s — approximately **67x real-time**.
 
-### CPU vs GPU summary
+### CPU vs GPU vs ONNX Summary
 
-```
+```text
 Device       | Synthesis Time | RTF     | Speed vs Real-time
 -------------|---------------|---------|--------------------
-CPU          | 0.454 s       | 0.120x  | ~8x faster
-GPU (RTX4060)| 0.056 s       | 0.015x  | ~67x faster
+CPU (PyTorch)| 0.454 s       | 0.120x  | ~8x faster
+CPU (ONNX)   | 0.609 s       | 0.172x  | ~5.8x faster
+GPU (PT CUDA)| 0.056 s       | 0.015x  | ~67x faster
 ```
+
+> **Note on ONNX**: Because TinyTTS is so small (~9M params), PyTorch's native inference is actually *faster* than ONNX Runtime on CPU due to lower graph overhead. ONNX is provided primarily for cross-platform deployment.
 
 ---
 
@@ -202,6 +219,7 @@ tiny-tts/
 - [ ] Public source code for training
 - [ ] Add more English speakers
 - [ ] Add ultra-lightweight zero-shot voice cloning
+- [ ] Release an even smaller model version while maintaining high accuracy
 
 ---
 
