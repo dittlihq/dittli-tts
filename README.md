@@ -29,6 +29,14 @@ TinyTTS is an end-to-end text-to-speech model that delivers natural-sounding spe
 
 With only **9 million parameters** and a checkpoint of just **~20 MB**, TinyTTS runs comfortably on CPU-only machines, edge devices, and embedded systems — making real-time speech synthesis accessible without a GPU.
 
+### 🔊 Audio Demo (3.5 seconds)
+
+<div align="center">
+  <video src="https://github.com/tronghieuit/tiny-tts/raw/develop/assets/paragraph.mp4" controls="controls" width="100%"></video>
+  <br>
+  <em>If the player above does not load, you can <a href="https://github.com/tronghieuit/tiny-tts/raw/develop/assets/paragraph.wav">Download WAV</a>.</em>
+</div>
+
 ---
 
 ## Installation
@@ -114,10 +122,6 @@ paragraph = (
 )
 tts.speak(paragraph, output_path="paragraph.wav")
 ```
-
-**🔊 Listen to the result (3.5 seconds) - [Download WAV](assets/paragraph.wav)**
-
-https://github.com/tronghieuit/tiny-tts/raw/develop/assets/paragraph.mp4
 
 ---
 
