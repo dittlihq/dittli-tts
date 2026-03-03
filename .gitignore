@@ -28,7 +28,6 @@ MANIFEST
 
 # Output files and directories
 infer_outputs/
-*.wav
 
 # Testing and profiling
 .tox/
@@ -60,7 +59,30 @@ venv.bak/
 *~
 .DS_Store
 
-# Ignore all checkpoint files...
-checkpoints/*
-# ...except for the default pre-trained model
-!checkpoints/G.pth
+# Model checkpoints (large files — use HF Hub)
+*.pth
+*.onnx
+
+# Third-party models
+models/
+
+# Temp audio files
+*.wav
+
+# Config (already in config.py)
+config.json
+
+# Benchmark results (text output)
+benchmark_results*.txt
+
+# Scripts with secrets
+push_hf.py
+
+# One-off debug/profiling scripts
+bench_wn.py
+bench_new.py
+bench_onnx.py
+profile_tiny.py
+verify_speed_claims.py
+get_params.py
+get_supertonic_sample.py

@@ -4,67 +4,94 @@ from tiny_tts import TinyTTS
 
 # Download required NLTK data for g2p-en
 try:
-    nltk.download('averaged_perceptron_tagger_eng')
-    nltk.download('averaged_perceptron_tagger')
-    nltk.download('cmudict')
+    nltk.download('averaged_perceptron_tagger_eng', quiet=True)
+    nltk.download('averaged_perceptron_tagger', quiet=True)
+    nltk.download('cmudict', quiet=True)
 except Exception as e:
     print(f"NLTK download warning: {e}")
 
-# Initialize the model (auto-downloads if needed)
+# Initialize the model (auto-downloads from HF Hub if needed)
 print("Initializing TinyTTS...")
 tts = TinyTTS()
 print("Model loaded successfully!")
 
-def synthesize_audio(text, speaker):
+
+def synthesize_audio(text, speed):
     output_path = "output.wav"
     try:
-        tts.speak(text, output_path=output_path, speaker=speaker)
+        tts.speak(text, output_path=output_path, speaker="MALE", speed=speed)
         return output_path
     except Exception as e:
         return f"Error: {e}"
 
-# Define available speakers
-# Define available speakers
-available_speakers = list(tts.model.SPK2ID.keys()) if hasattr(tts.model, "SPK2ID") else ["female"]
+
+COMPARISON_TABLE = """
+## ⚡ Comparison with Other TTS Engines
+
+All numbers are **CPU-only** on the same Intel Core laptop. Text: *"The weather is nice today, and I feel very relaxed."*
+
+| ENGINE | Params | Total (s) | Audio (s) | RTFx |
+|:---|---:|---:|---:|---:|
+| **TinyTTS (ONNX) 🚀** | **1.6M** | **0.092** | **4.88** | **~53x** |
+| Piper (ONNX, 22kHz) | ~63M | 0.112 | 2.91 | ~26x |
+| TinyTTS (PyTorch) | 1.6M | 0.272 | 4.88 | ~18x |
+| KittenTTS nano | ~10M | 0.286 | 4.87 | ~17x |
+| Supertonic (2-step) | ~82M | 0.249 | 3.69 | ~15x |
+| Pocket-TTS | 100M | 0.928 | 3.68 | ~4x |
+| Kokoro ONNX | 82M | 0.933 | 3.16 | ~3x |
+| KittenTTS mini | ~25M | 2.047 | 4.17 | ~2x |
+
+> **RTFx** = Audio Duration ÷ Synthesis Time (higher = faster).
+> TinyTTS achieves the **best speed-to-size ratio**: only **1.6M params** / **3.4 MB** ONNX yet ~53× real-time at 44.1kHz.
+"""
 
 # Create Gradio interface
 with gr.Blocks(title="TinyTTS Demo", theme=gr.themes.Soft()) as app:
     gr.Markdown("# 🗣️ TinyTTS")
-    gr.Markdown("**Ultra-lightweight English Text-to-Speech (~9M parameters, ~20MB on disk)**")
-    gr.Markdown("This space runs on CPU efficiently and synthesizes high-quality audio faster than real-time.")
-    
+    gr.Markdown(
+        "**Ultra-lightweight English Text-to-Speech — only 1.6M parameters, ~3.4 MB ONNX**\n\n"
+        "This space runs on CPU efficiently and synthesizes high-quality 44.1kHz audio **~53× faster** than real-time."
+    )
+
     with gr.Row():
         with gr.Column():
             text_input = gr.Textbox(
-                label="Input Text", 
-                placeholder="Enter English text here...", 
+                label="Input Text",
+                placeholder="Enter English text here...",
                 value="The weather is nice today, and I feel very relaxed.",
                 lines=4
             )
-            speaker_dropdown = gr.Dropdown(
-                choices=available_speakers, 
-                value="female" if "female" in available_speakers else available_speakers[0], 
-                label="Speaker"
+            speed_slider = gr.Slider(
+                minimum=0.5,
+                maximum=2.0,
+                value=1.0,
+                step=0.1,
+                label="Speed (1.0 = normal, >1 = faster, <1 = slower)"
             )
-            submit_btn = gr.Button("Synthesize Speech", variant="primary")
-            
+            submit_btn = gr.Button("🔊 Synthesize Speech", variant="primary")
+
         with gr.Column():
             audio_output = gr.Audio(label="Output Audio", type="filepath")
-            
+
     # Example prompts
     gr.Examples(
         examples=[
-            ["The weather is nice today, and I feel very relaxed.", "female"],
-            ["TinyTTS has only nine million parameters, making it extremely fast on CPUs.", "female"],
+            ["The weather is nice today, and I feel very relaxed.", 1.0],
+            ["TinyTTS has only one point six million parameters, making it extremely fast on CPUs.", 1.0],
+            ["This is a speed test. Speaking at one and a half times the normal rate.", 1.5],
+            ["Slow and steady wins the race. Let me speak more carefully.", 0.7],
         ],
-        inputs=[text_input, speaker_dropdown],
+        inputs=[text_input, speed_slider],
     )
-    
+
     submit_btn.click(
         fn=synthesize_audio,
-        inputs=[text_input, speaker_dropdown],
+        inputs=[text_input, speed_slider],
         outputs=audio_output
     )
+
+    # Comparison table
+    gr.Markdown(COMPARISON_TABLE)
 
 if __name__ == "__main__":
     app.launch(server_name="0.0.0.0")

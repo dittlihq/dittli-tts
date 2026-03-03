@@ -5,7 +5,7 @@
 <h1 align="center">TinyTTS</h1>
 
 <p align="center">
-  <b>Ultra-lightweight English Text-to-Speech — only 9M parameters, ~20 MB on disk</b>
+  <b>Ultra-lightweight English Text-to-Speech — only 1.6M parameters, ~3.4 MB ONNX</b>
 </p>
 
 <p align="center">
@@ -22,22 +22,12 @@ TinyTTS is an end-to-end text-to-speech model that delivers natural-sounding spe
 
 | Metric | TinyTTS | Typical TTS Models |
 |---|---|---|
-| **Parameters** | **~9M** | 50M–200M+ |
-| **Checkpoint size** | **~20 MB** | 200 MB–1 GB+ |
+| **Parameters** | **~1.6M** | 50M–200M+ |
+| **Checkpoint size** | **~3.4 MB** (ONNX FP16) | 200 MB–1 GB+ |
 | **Sample rate** | 44.1 kHz | 22.05–44.1 kHz |
 | **End-to-end** | Yes | Often requires separate vocoder |
 
-With only **9 million parameters** and a checkpoint of just **~20 MB**, TinyTTS runs comfortably on CPU-only machines, edge devices, and embedded systems — making real-time speech synthesis accessible without a GPU.
-
-### 🔊 Audio Demo (3.5 seconds)
-
-<div align="center">
-  <video src="https://github.com/tronghieuit/tiny-tts/raw/develop/assets/paragraph.mp4" controls="controls" width="100%"></video>
-  <br>
-  <em>If the player above does not load, you can <a href="https://github.com/tronghieuit/tiny-tts/raw/develop/assets/paragraph.wav">Download WAV</a>.</em>
-</div>
-
----
+With only **1.6 million parameters** and an ONNX model of just **~3.4 MB** (FP16), TinyTTS runs comfortably on CPU-only machines, edge devices, and embedded systems — making real-time speech synthesis accessible without a GPU.
 
 ## Installation
 
@@ -52,7 +42,7 @@ pip install -e .
 After installing, the `tiny-tts` command is available globally:
 
 ```bash
-tiny-tts --checkpoint checkpoints/G.pth --text "Hello world" --device cuda
+tiny-tts --checkpoint G.pth --text "Hello world" --device cuda
 ```
 
 ### Dependencies only
@@ -70,9 +60,10 @@ pip install torch torchaudio soundfile g2p-en transformers numba
 ```bash
 tiny-tts \
   --text "The weather is nice today, and I feel very relaxed." \
-  --checkpoint checkpoints/G.pth \
+  --checkpoint G.pth \
   --output output.wav \
-  --speaker female \
+  --speaker MALE \
+  --speed 1.0 \
   --device cuda
 ```
 
@@ -81,17 +72,8 @@ tiny-tts \
 ```bash
 tiny-tts \
   --text "The weather is nice today, and I feel very relaxed." \
-  --checkpoint checkpoints/G.pth \
+  --checkpoint G.pth \
   --device cpu
-```
-
-### Synthesize with all speakers
-
-```bash
-tiny-tts \
-  --text "Testing all available speakers." \
-  --checkpoint checkpoints/G.pth \
-  --speaker all
 ```
 
 Output files are saved to `infer_outputs/`.
@@ -112,10 +94,14 @@ tts = TinyTTS()
 # Synthesize a single sentence
 tts.speak("Hello, this is a test of the Python API.", output_path="hello.wav")
 
+# Adjust speech speed (1.0=normal, 1.5=faster, 0.7=slower)
+tts.speak("This is faster speech.", output_path="fast.wav", speed=1.5)
+tts.speak("This is slower speech.", output_path="slow.wav", speed=0.7)
+
 # Synthesize a long paragraph (5 sentences)
 paragraph = (
     "TinyTTS is an ultra-lightweight text-to-speech model. "
-    "It has only nine million parameters, which makes it extremely fast. "
+    "It has only one point six million parameters, which makes it extremely fast. "
     "You can run it easily on your local CPU without a dedicated graphics card. "
     "The audio quality remains surprisingly clear despite the small model size. "
     "I hope you enjoy building exciting applications with it!"
@@ -128,51 +114,62 @@ tts.speak(paragraph, output_path="paragraph.wav")
 ## Inference Benchmarks
 
 Benchmarked on real hardware with the sentence:  
-*"Hello there, I am testing the English text to speech system."* (~3.77s of audio at 44.1kHz)
+*"The weather is nice today, and I feel very relaxed."* (~4.9s of audio at 44.1kHz)
 
-- **GPU**: NVIDIA GeForce RTX 4060 Laptop GPU  
-- **CPU**: Intel CPU (same machine)  
-- **PyTorch**: 2.5.1+cu121  
-- **Model**: 9.84M parameters, 19.1 MB checkpoint
+- **CPU**: Intel Core (laptop, no GPU)
+- **PyTorch**: 2.5.1+cu121
+- **Model**: 1.62M parameters
 
-### CPU
+| Backend | Synthesis Time | Audio | RTFx |
+|:---|---:|---:|---:|
+| **ONNX Runtime (CPU)** | **92 ms** | 4.88s | **~53x** 🚀 |
+| PyTorch (CPU) | 272 ms | 4.88s | ~18x |
 
-| Metric | Value |
-|---|---|
-| Model load time | 0.204 s |
-| Text processing time | 0.087 s |
-| Synthesis time (avg, 5 runs) | **0.454 s** |
-| Synthesis time (min) | 0.439 s |
-| Synthesis time (max) | 0.486 s |
-| Real-Time Factor (RTF) | **0.12x** |
+> RTFx = Audio Duration ÷ Synthesis Time (higher = faster).  
+> With only 1.62M params, TinyTTS synthesizes ~5s of 44.1kHz audio in **92ms via ONNX** — approximately **53× real-time** on a laptop CPU.
 
-> RTF < 1.0 means faster than real-time. TinyTTS synthesizes 3.77s of audio in just 0.45s on CPU — approximately **8x real-time**.
+---
 
-### GPU (CUDA)
+## Comparison with Other TTS Engines
 
-| Metric | Value |
-|---|---|
-| Model load time | 0.351 s |
-| Text processing time | 0.001 s |
-| Synthesis time (avg, 5 runs) | **0.056 s** |
-| Synthesis time (min) | 0.052 s |
-| Synthesis time (max) | 0.061 s |
-| Real-Time Factor (RTF) | **0.015x** |
-| Peak VRAM usage | 126.8 MB |
+All numbers are **CPU-only inference** benchmarked on the **same machine** (Intel Core laptop, no GPU).  
+Text: *"The weather is nice today, and I feel very relaxed."*  
+Protocol: 5 warm-up runs + 20 timed runs (median). Model load time excluded.
 
-> On GPU, TinyTTS synthesizes 3.77s of audio in just 0.056s — approximately **67x real-time**.
+| ENGINE | Params | TTFA (ms) | TOTAL (s) | AUDIO (s) | RTFx | 🔊 |
+|:---|---:|---:|---:|---:|---:|:---:|
+| **TinyTTS (ONNX)** | **1.6M** | **86** | **0.092** | **4.88** | **~53x 🚀** | [▶](samples/tinytts.wav) |
+| Piper (ONNX, 22kHz) | ~63M | 114 | 0.112 | 2.91 | ~26x | [▶](samples/piper.wav) |
+| **TinyTTS (PyTorch)** | **1.6M** | **295** | **0.272** | **4.88** | **~18x** | [▶](samples/tinytts.wav) |
+| KittenTTS nano | ~10M | 298 | 0.286 | 4.87 | ~17x | [▶](samples/kittentts_nano.wav) |
+| Supertonic (2-step) | ~82M | 260 | 0.249 | 3.69 | ~15x | [▶](samples/supertonic.wav) |
+| Pocket-TTS | 100M | 1055 | 0.928 | 3.68 | ~4x | [▶](samples/pocket_tts.wav) |
+| Kokoro ONNX | 82M | 943 | 0.933 | 3.16 | ~3x | [▶](samples/kokoro.wav) |
+| KittenTTS mini | ~25M | 1965 | 2.047 | 4.17 | ~2x | [▶](samples/kittentts_mini.wav) |
+
+> **TTFA** = Time To First Audio. **RTFx** = Audio Duration ÷ Synthesis Time (higher = faster).  
+> ⚠️ Output sample rates differ: Piper 22kHz, KittenTTS 24kHz, TinyTTS/Supertonic 44.1kHz.  
+> **TinyTTS achieves the best speed-to-size ratio**: only **1.6M params** / **3.4 MB** ONNX yet ~53× real-time at 44.1kHz.
 
 ### CPU vs GPU vs ONNX Summary
 
 ```text
-Device       | Synthesis Time | RTF     | Speed vs Real-time
--------------|---------------|---------|--------------------
-CPU (PyTorch)| 0.454 s       | 0.120x  | ~8x faster
-CPU (ONNX)   | 0.609 s       | 0.172x  | ~5.8x faster
-GPU (PT CUDA)| 0.056 s       | 0.015x  | ~67x faster
+Backend          | Synthesis Time | Audio  | RTFx
+-----------------|----------------|--------|----------
+CPU (ONNX)       | 0.092 s        | 4.88s  | ~53x 🚀
+CPU (PyTorch)    | 0.272 s        | 4.88s  | ~18x
+GPU (CUDA, est.) | ~0.015 s       | 4.88s  | ~325x
 ```
 
-> **Note on ONNX**: Because TinyTTS is so small (~9M params), PyTorch's native inference is actually *faster* than ONNX Runtime on CPU due to lower graph overhead. ONNX is provided primarily for cross-platform deployment.
+> **ONNX Runtime** is the recommended backend for CPU deployment — it provides **~3× speedup** over PyTorch eager mode by fusing ops and eliminating Python dispatch overhead.
+
+### Run benchmarks yourself
+
+```bash
+python benchmark.py
+```
+
+> Compares TinyTTS (PyTorch + ONNX) against Piper, Kokoro, KittenTTS, Pocket-TTS and Supertonic on CPU.
 
 ---
 
@@ -182,8 +179,9 @@ GPU (PT CUDA)| 0.056 s       | 0.015x  | ~67x faster
 |---|---|---|---|
 | `--text` | `-t` | *"The weather is nice today..."* | Text to synthesize |
 | `--checkpoint` | `-c` | *(optional)* | Path to `G.pth`. Auto-downloads if omitted. |
-| `--output` | `-o` | `english_test.wav` | Output audio filename |
-| `--speaker` | `-s` | `female` | Speaker ID |
+| `--output` | `-o` | `output.wav` | Output audio filename |
+| `--speaker` | `-s` | `MALE` | Speaker ID |
+| `--speed` | | `1.0` | Speech speed (1.0=normal, 1.5=faster, 0.7=slower) |
 | `--device` | | `cuda` | Device: `cuda` or `cpu` |
 
 ---
@@ -196,8 +194,8 @@ tiny-tts/
 ├── TinyTTS.png               # Project logo
 ├── setup.py                  # Package setup (pip install)
 ├── pyproject.toml            # Build configuration
-├── checkpoints/
-│   └── G.pth                 # Pre-trained checkpoint (~20 MB)
+├── G.pth              # Pre-trained checkpoint (FP16: ~17 MB)
+├── tinytts_fp16.onnx         # ONNX FP16 model (~3.4 MB)
 ├── models/
 │   └── synthesizer.py        # Model definition
 ├── nn/
@@ -223,7 +221,7 @@ tiny-tts/
 - [ ] Public source code for training
 - [ ] Add more English speakers
 - [ ] Add ultra-lightweight zero-shot voice cloning
-- [ ] Release an even smaller model version while maintaining high accuracy
+- [x] Release an even smaller model version while maintaining high accuracy
 
 ---
 

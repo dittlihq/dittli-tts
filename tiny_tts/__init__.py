@@ -38,7 +38,7 @@ class TinyTTS:
                 
         self.model = load_engine(checkpoint_path, self.device)
 
-    def speak(self, text, output_path="output.wav", speaker="female"):
+    def speak(self, text, output_path="output.wav", speaker="MALE", speed=1.0):
         """Synthesize text to speech and save to output_path."""
         print(f"Synthesizing: {text}")
 
@@ -73,12 +73,15 @@ class TinyTTS:
         bert = torch.zeros(1024, len(phone_ids)).to(self.device).unsqueeze(0)
         ja_bert = torch.zeros(768, len(phone_ids)).to(self.device).unsqueeze(0)
 
+        # speed > 1.0 = faster speech, < 1.0 = slower speech
+        length_scale = 1.0 / speed
+
         with torch.no_grad():
             audio, *_ = self.model.infer(
                 x, x_lengths, sid, tone, language, bert, ja_bert,
                 noise_scale=0.667,
                 noise_scale_w=0.8,
-                length_scale=1.0
+                length_scale=length_scale
             )
 
         audio_np = audio[0, 0].cpu().numpy()

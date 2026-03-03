@@ -56,10 +56,14 @@ def load_engine(checkpoint_path, device='cuda'):
 
     net_g.load_state_dict(new_state_dict, strict=False)
     net_g.eval()
+
+    # Fold weight_norm into weight tensors for faster inference (~18% speedup)
+    net_g.dec.remove_weight_norm()
+
     return net_g
 
 
-def synthesize(text, output_path, model, speaker="LJ", device='cuda'):
+def synthesize(text, output_path, model, speaker="MALE", device='cuda', speed=1.0):
     print(f"Synthesizing: {text}")
 
     # Normalize text
@@ -93,12 +97,15 @@ def synthesize(text, output_path, model, speaker="LJ", device='cuda'):
     bert = torch.zeros(1024, len(phone_ids)).to(device).unsqueeze(0)
     ja_bert = torch.zeros(768, len(phone_ids)).to(device).unsqueeze(0)
 
+    # speed > 1.0 = faster speech, < 1.0 = slower speech
+    length_scale = 1.0 / speed
+
     with torch.no_grad():
         audio, *_ = model.infer(
             x, x_lengths, sid, tone, language, bert, ja_bert,
             noise_scale=0.667,
             noise_scale_w=0.8,
-            length_scale=1.0
+            length_scale=length_scale
         )
 
     audio = audio[0, 0].cpu().numpy()
@@ -124,8 +131,9 @@ def main():
     parser = argparse.ArgumentParser(description="TinyTTS — English Text-to-Speech Inference")
     parser.add_argument("--text", "-t", type=str, default="The weather is nice today, and I feel very relaxed.", help="Text to synthesize")
     parser.add_argument("--checkpoint", "-c", type=str, default=None, help="Path to checkpoint. Auto-downloads if not provided.")
-    parser.add_argument("--output", "-o", type=str, default="english_test.wav", help="Output audio file path")
-    parser.add_argument("--speaker", "-s", type=str, default="female", help="Speaker ID")
+    parser.add_argument("--output", "-o", type=str, default="output.wav", help="Output audio file path")
+    parser.add_argument("--speaker", "-s", type=str, default="MALE", help="Speaker ID")
+    parser.add_argument("--speed", type=float, default=1.0, help="Speech speed (1.0=normal, 1.5=faster, 0.7=slower)")
     parser.add_argument("--device", type=str, default="cuda", help="Device to use (cuda or cpu)")
 
     args = parser.parse_args()
@@ -174,10 +182,10 @@ def main():
         print(f"Synthesizing for all {len(SPK2ID)} speakers...")
         for spk in SPK2ID.keys():
             final_output = os.path.join(out_dir, f"{name}_step{step_str}_spk{spk}{ext}")
-            synthesize(args.text, final_output, model, speaker=spk, device=args.device)
+            synthesize(args.text, final_output, model, speaker=spk, device=args.device, speed=args.speed)
     else:
         final_output = os.path.join(out_dir, f"{name}_step{step_str}_spk{args.speaker}{ext}")
-        synthesize(args.text, final_output, model, speaker=args.speaker, device=args.device)
+        synthesize(args.text, final_output, model, speaker=args.speaker, device=args.device, speed=args.speed)
 
 if __name__ == "__main__":
     main()
