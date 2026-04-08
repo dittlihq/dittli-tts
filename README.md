@@ -264,17 +264,17 @@ npx tiny-tts "Hello world" -o hello.wav
 
 ## Python vs Node.js G2P Comparison
 
-Both the Python (PyPI) and Node.js (npm) packages share the same ONNX model and CMU pronunciation dictionary (112,139 entries). The G2P (Grapheme-to-Phoneme) pipelines were tested on **542 diverse sentences** spanning everyday conversation, academic/scientific text, technical vocabulary, tongue twisters, and complex compound sentences.
+Both the Python (PyPI) and Node.js (npm) packages share the same ONNX model and CMU pronunciation dictionary (123,463 entries). The G2P (Grapheme-to-Phoneme) pipelines were tested on **542 diverse sentences** spanning everyday conversation, academic/scientific text, technical vocabulary, tongue twisters, and complex compound sentences.
 
 | | Python (PyPI) | Node.js (npm) |
 |---|---|---|
-| **G2P backend** | BERT tokenizer + g2p_en + full CMU dict | Whitespace split + apostrophe handling + full CMU dict |
-| **CMU dict entries** | ~130K (with syllable boundaries) | 112K (flat phoneme arrays) |
-| **Unknown word fallback** | `g2p_en` ML model | Character-level |
+| **G2P backend** | BERT tokenizer + g2p_en + full CMU dict | Apostrophe-aware split + neural G2P + full CMU dict |
+| **CMU dict entries** | ~123K (NLTK cmudict + syllable boundaries) | 123K (merged NLTK + cmudict.rep) |
+| **Unknown word fallback** | `g2p_en` neural model (GRU seq2seq) | Ported `g2p_en` neural model (identical weights) |
 | **Model** | PyTorch / ONNX | ONNX only |
-| **Phone ID match rate** | — | **86.3%** exact match (542 sentences) |
+| **Phone ID match rate** | — | **100%** exact match (542/542 sentences) ✅ |
 
-> The 13.7% difference comes from rare technical/medical terms not in the CMU dictionary (e.g. `neuroplasticity`, `gastroenterologist`, `blockchain`). Python uses the `g2p_en` neural model as fallback, while Node.js falls back to character-level phonemization. **For everyday English text, the match rate is ~95%+.**
+> Since v5.0.0, the Node.js package includes a **pure-JS port of the g2p_en neural G2P model** (GRU encoder-decoder, ~4.4 MB weights), achieving **100% phoneme-level match** with the Python implementation across all 542 test sentences.
 
 ---
 
