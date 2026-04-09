@@ -10,7 +10,9 @@
 
 <p align="center">
   <a href="https://pypi.org/project/tiny-tts/"><img src="https://img.shields.io/pypi/v/tiny-tts?label=PyPI&color=blue" alt="PyPI"></a>
+  <a href="https://pypi.org/project/tiny-tts/"><img src="https://img.shields.io/pypi/dm/tiny-tts?label=PyPI%20downloads&color=blue" alt="PyPI Downloads"></a>
   <a href="https://www.npmjs.com/package/tiny-tts"><img src="https://img.shields.io/npm/v/tiny-tts?label=npm&color=green" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/tiny-tts"><img src="https://img.shields.io/npm/dm/tiny-tts?label=npm%20downloads&color=green" alt="npm Downloads"></a>
   <a href="https://huggingface.co/spaces/backtracking/tiny-tts-demo">
     <img src="https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md-dark.svg" alt="Open in Spaces">
   </a>
