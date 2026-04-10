@@ -301,3 +301,9 @@ Both the Python (PyPI) and Node.js (npm) packages share the same ONNX model and 
 ## License
 
 Licensed under the [Apache License, Version 2.0](LICENSE).
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=tronghieuit/tiny-tts&type=Date)](https://star-history.com/#tronghieuit/tiny-tts&Date)
