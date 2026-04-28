@@ -40,7 +40,7 @@ image = (
         ".",
         remote_path="/root/tiny-tts",
         ignore=[
-            "data/**", "checkpoints/**", "checkpoints_de/**",
+            "data/**", "checkpoints/*.pth", "checkpoints_de/**",
             "venv/**", ".venv/**", ".git/**", "__pycache__/**",
             "node_modules/**", "models/*.onnx",
             "*.pth", "*.zip", "*.tgz", "*.tar.gz",
