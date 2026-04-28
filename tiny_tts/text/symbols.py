@@ -243,9 +243,17 @@ fr_symbols = [
 num_fr_tones = 1
 
 # German
+# Most German phonemes are reused from the union of other languages
+# (b/d/f/g/h/k/l/m/n/p/r/s/t/v/z/x from zh, ts from ja, ʃ/ç/ŋ/ɛ/ɔ/ʊ/ə/ɪ from es,
+#  ø/œ/ʁ/ɐ from fr, ː from es). Only truly missing symbols are added here:
+#   - ʏ : short rounded high front vowel (kurz ü as in "müssen")
+#   - yː : long rounded high front vowel (lang ü as in "kühn")
+#         — distinct token to avoid conflict with zh "y" = [j] glide.
+#   - ̩ : combining vertical line below (syllabic consonant marker)
 de_symbols = [
     "ʏ",
-    "̩"
+    "̩",
+    "yː"
 ]
 num_de_tones = 1
 
