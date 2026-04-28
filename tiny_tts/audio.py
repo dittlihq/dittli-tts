@@ -79,7 +79,7 @@ def _mel_basis(
 ) -> torch.Tensor:
     key = (n_fft, n_mels, sr, fmin, fmax, str(device))
     if key not in _MEL_BASIS_CACHE:
-        mel = torchaudio.functional.melscale_fbanks(
+        mel = AF.melscale_fbanks(
             n_freqs=n_fft // 2 + 1,
             f_min=float(fmin),
             f_max=float(fmax) if fmax else float(sr) / 2.0,
