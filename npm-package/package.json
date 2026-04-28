@@ -4,7 +4,17 @@
   "description": "Ultra-lightweight text-to-speech (1.6M params). Pure Node.js inference via ONNX Runtime — zero Python dependency.",
   "main": "index.js",
   "types": "index.d.ts",
-  "files": ["index.js", "index.d.ts", "cmudict.json", "g2p_predict.js", "g2p_model.json", "bin/cli.js"],
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "g2p_en.js",
+    "g2p_de.js",
+    "g2p_de_rules.json",
+    "cmudict.json",
+    "g2p_predict.js",
+    "g2p_model.json",
+    "bin/cli.js"
+  ],
   "bin": { "tiny-tts": "bin/cli.js" },
   "keywords": ["tts","text-to-speech","speech-synthesis","onnx","lightweight","node-tts","edge-tts","offline-tts"],
   "author": "TinyTTS Contributors",

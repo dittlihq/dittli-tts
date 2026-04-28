@@ -14,11 +14,13 @@ program
   .option('-s, --speaker <id>', 'Speaker ID', 'MALE')
   .option('--speed <number>', 'Speech speed', '1.0')
   .option('--model <path>', 'Path to ONNX model (auto-downloaded if omitted)')
+  .option('--metadata <path>', 'Path to model metadata JSON (defaults to <model>.json or English fallback)')
   .option('--device <dev>', 'Device: cpu or gpu', 'cpu')
   .action(async (text, options) => {
     try {
       const tts = new TinyTTS({
         modelPath: options.model,
+        metadataPath: options.metadata,
         device: options.device,
       });
 

@@ -4,8 +4,7 @@ import re
 import torch
 import soundfile as sf
 import argparse
-from tiny_tts.text.english import normalize_text, grapheme_to_phoneme
-from tiny_tts.text import phonemes_to_ids
+from tiny_tts.text import phonemes_to_ids, get_g2p
 from tiny_tts.nn import commons
 from tiny_tts.models import VoiceSynthesizer
 from tiny_tts.text.symbols import symbols
@@ -63,17 +62,13 @@ def load_engine(checkpoint_path, device='cuda'):
     return net_g
 
 
-def synthesize(text, output_path, model, speaker="MALE", device='cuda', speed=1.0):
-    print(f"Synthesizing: {text}")
+def synthesize(text, output_path, model, speaker="MALE", device='cuda', speed=1.0, lang="EN"):
+    print(f"Synthesizing ({lang}): {text}")
 
-    # Normalize text
+    normalize_text, grapheme_to_phoneme = get_g2p(lang)
     normalized = normalize_text(text)
-
-    # Phonemize
     phones, tones, word2ph = grapheme_to_phoneme(normalized)
-
-    # Convert to sequence
-    phone_ids, tone_ids, lang_ids = phonemes_to_ids(phones, tones, "EN")
+    phone_ids, tone_ids, lang_ids = phonemes_to_ids(phones, tones, lang.upper())
 
     # Add blanks
     if ADD_BLANK:
@@ -135,6 +130,7 @@ def main():
     parser.add_argument("--speaker", "-s", type=str, default="MALE", help="Speaker ID")
     parser.add_argument("--speed", type=float, default=1.0, help="Speech speed (1.0=normal, 1.5=faster, 0.7=slower)")
     parser.add_argument("--device", type=str, default="cuda", help="Device to use (cuda or cpu)")
+    parser.add_argument("--lang", type=str, default="EN", help="Language code: EN or DE")
 
     args = parser.parse_args()
 
@@ -182,10 +178,10 @@ def main():
         print(f"Synthesizing for all {len(SPK2ID)} speakers...")
         for spk in SPK2ID.keys():
             final_output = os.path.join(out_dir, f"{name}_step{step_str}_spk{spk}{ext}")
-            synthesize(args.text, final_output, model, speaker=spk, device=args.device, speed=args.speed)
+            synthesize(args.text, final_output, model, speaker=spk, device=args.device, speed=args.speed, lang=args.lang)
     else:
         final_output = os.path.join(out_dir, f"{name}_step{step_str}_spk{args.speaker}{ext}")
-        synthesize(args.text, final_output, model, speaker=args.speaker, device=args.device, speed=args.speed)
+        synthesize(args.text, final_output, model, speaker=args.speaker, device=args.device, speed=args.speed, lang=args.lang)
 
 if __name__ == "__main__":
     main()

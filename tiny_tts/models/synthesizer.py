@@ -663,6 +663,101 @@ class VoiceSynthesizer(nn.Module):
             self.ref_enc = StyleEncoder(spec_channels, gin_channels, layernorm=norm_refenc)
         self.use_vc = use_vc
 
+    def forward(
+        self,
+        x,
+        x_lengths,
+        y,
+        y_lengths,
+        sid,
+        tone,
+        language,
+        bert,
+        ja_bert,
+    ):
+        """Training forward pass.
+
+        Returns:
+            o:           generated waveform segment, shape [B, 1, T_seg]
+            l_length_sdp: NLL of stochastic duration predictor (per-batch tensor)
+            l_length_dp:  L1 loss of deterministic duration predictor (scalar)
+            ids_slice:    indices used to slice z (needed to slice y for mel loss)
+            x_mask:       phoneme mask, shape [B, 1, T_x]
+            y_mask:       spectrogram mask, shape [B, 1, T_y]
+            (z, z_p, m_p_exp, logs_p_exp, m_q, logs_q): VITS latents for KL
+                m_p_exp, logs_p_exp are the *expanded* prior stats (T_x → T_y).
+        """
+        if self.n_speakers > 0:
+            g = self.emb_g(sid).unsqueeze(-1)
+        else:
+            g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
+        g_p = None if self.use_vc else g
+
+        x_enc, m_p, logs_p, x_mask = self.enc_p(
+            x, x_lengths, tone, language, bert, ja_bert, g=g_p
+        )
+        z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
+        z_p = self.flow(z, y_mask, g=g)
+
+        with torch.no_grad():
+            s_p_sq_r = torch.exp(-2 * logs_p)
+            neg_cent1 = torch.sum(
+                -0.5 * math.log(2 * math.pi) - logs_p, [1], keepdim=True
+            )  # [b, 1, t_x]
+            neg_cent2 = torch.matmul(
+                -0.5 * (z_p ** 2).transpose(1, 2), s_p_sq_r
+            )  # [b, t_y, t_x]
+            neg_cent3 = torch.matmul(
+                z_p.transpose(1, 2), (m_p * s_p_sq_r)
+            )  # [b, t_y, t_x]
+            neg_cent4 = torch.sum(
+                -0.5 * (m_p ** 2) * s_p_sq_r, [1], keepdim=True
+            )  # [b, 1, t_x]
+            neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
+
+            if self.use_noise_scaled_mas:
+                eps = (
+                    torch.std(neg_cent)
+                    * torch.randn_like(neg_cent)
+                    * self.current_mas_noise_scale
+                )
+                neg_cent = neg_cent + eps
+
+            attn_mask = (
+                torch.unsqueeze(x_mask, 2) * torch.unsqueeze(y_mask, -1)
+            ).squeeze(1)  # [b, t_y, t_x]
+            attn = alignment.viterbi_decode(neg_cent, attn_mask).detach()
+
+        # Phoneme durations from the alignment.
+        w = attn.sum(1).unsqueeze(1)  # [b, 1, t_x]
+        l_length_sdp = self.sdp(x_enc, x_mask, w=w, g=g)
+        l_length_sdp = torch.sum(l_length_sdp.float()) / torch.sum(x_mask)
+
+        logw_pred = self.dp(x_enc, x_mask, g=g)
+        logw_target = torch.log(w + 1e-6) * x_mask
+        l_length_dp = torch.sum(
+            (logw_pred - logw_target) ** 2 * x_mask
+        ) / torch.sum(x_mask)
+
+        # Expand prior to T_y via the alignment.
+        m_p_exp = torch.matmul(attn, m_p.transpose(1, 2)).transpose(1, 2)
+        logs_p_exp = torch.matmul(attn, logs_p.transpose(1, 2)).transpose(1, 2)
+
+        z_slice, ids_slice = commons.random_segments(
+            z, y_lengths, self.segment_size
+        )
+        o = self.dec(z_slice, g=g)
+        return (
+            o,
+            l_length_sdp,
+            l_length_dp,
+            attn,
+            ids_slice,
+            x_mask,
+            y_mask,
+            (z, z_p, m_p_exp, logs_p_exp, m_q, logs_q),
+        )
+
     def infer(
         self,
         x,

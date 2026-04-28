@@ -17,3 +17,15 @@ def phonemes_to_ids(cleaned_text, tones, language, symbol_to_id=None):
     lang_id = language_id_map[language]
     lang_ids = [lang_id for _ in phones]
     return phones, tones, lang_ids
+
+
+def get_g2p(language: str):
+    """Return the (normalize_text, grapheme_to_phoneme) pair for a language code."""
+    lang = language.upper()
+    if lang == "EN":
+        from .english import normalize_text, grapheme_to_phoneme
+        return normalize_text, grapheme_to_phoneme
+    if lang == "DE":
+        from .german import normalize_text, grapheme_to_phoneme
+        return normalize_text, grapheme_to_phoneme
+    raise ValueError(f"No G2P registered for language {language!r}.")
