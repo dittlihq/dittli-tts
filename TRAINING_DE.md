@@ -38,13 +38,15 @@ python scripts/finetune_de.py \
 
 | Provider | Pricing | Best for | Notes |
 |---|---|---|---|
-| **Vast.ai** | $0.20–$1.00/h for RTX 3090–4090 | Cheapest A100/3090 by far | Bring-your-own image; needs a debit card |
+| **Kaggle Notebooks** | **Free, 30 h/week of T4 (16 GB) or P100** | **Best free option for this model** | A full 50 k–130 k step run fits in one 12 h session; checkpoints persist via Kaggle Datasets |
+| **Google Colab (free)** | Free T4, ~12 h / day soft cap | Quick experiments | GPU not guaranteed; gets reclaimed if idle |
+| **Vast.ai** | $0.20–$1.00/h for RTX 3090–4090 | Cheapest paid option | Bring-your-own image; needs a debit card |
 | **RunPod** | ~$0.40/h RTX 3090, $1.50/h A100 | Easy templates, persistent volumes | Pre-built PyTorch images |
 | **Lambda Labs** | $1.10/h A100 (40 GB), $1.99/h H100 | Reliable, ssh-friendly | Capacity sometimes scarce |
 | **Modal** | Pay-per-second A10G $1.10/h, A100 $4/h | One-shot training jobs from Python | Easiest if you're already a Python person |
-| **Google Colab Pro+** | $50/mo | Quick experiments | A100s available but not guaranteed; 24 h runtime cap |
-| **Kaggle Notebooks** | Free, 30 h/week of T4 or P100 | Rapid prototyping | Cannot leave running unattended |
-| **AWS / GCP / Azure** | A100 ~$3–5/h | If you're already there | Highest setup cost |
+| **Google Colab Pro+** | $50/mo | Better Colab experience | A100s available but not guaranteed; 24 h runtime cap |
+| **AWS / GCP / Azure** | A100 ~$3–5/h, plus free credits programs | Existing cloud accounts | $300 free credits on GCP for new accounts |
+| **Hugging Face Spaces (Pro)** | $9/mo, free Spaces have CPU only | Hosting, not training | Spaces aren't designed for long-running training |
 
 For Thorsten Voice end-to-end, **a single A100 for ~24 h (~$25–$50)** is the
 most cost-effective path. A 3090 for 3 days (~$30–$70 on Vast.ai) is the
@@ -54,7 +56,63 @@ cheapest absolute number.
 
 ## Cloud-by-cloud quickstart
 
-### Vast.ai (cheapest)
+### Kaggle Notebooks (best free option)
+
+Free 16-GB T4 (or 16-GB P100), no credit card. Sessions cap at 12 h, with
+30 h of GPU time per week. A single 12 h session at ~3 steps/s is enough
+for ~130 k steps — the full target — so you typically don't need a second
+session.
+
+1. Sign up at kaggle.com and verify your phone (one-time, unlocks GPUs).
+2. New Notebook → Settings → **Accelerator: GPU T4 x1** (or P100), **Internet: On**.
+3. Paste the cell below into the notebook and run.
+
+```python
+# Cell 1 — clone and install
+!git clone https://github.com/brio1009/tiny-tts.git
+%cd tiny-tts
+!git checkout claude/german-implementation-progress-15W8v
+!pip install -q -r requirements.txt
+
+# Cell 2 — fetch dataset + warm-start checkpoint
+!bash scripts/setup_de_data.sh
+
+# Cell 3 — pre-compute features (~10 min on Kaggle CPU)
+!python -m tiny_tts.data.preprocess \
+    --metadata data/thorsten/metadata.csv \
+    --wavs-dir data/thorsten/wavs
+
+# Cell 4 — sanity check (a few seconds on GPU)
+!python scripts/smoke_de.py \
+    --metadata data/thorsten/metadata.csv \
+    --wavs-dir data/thorsten/wavs \
+    --device cuda
+
+# Cell 5 — actual training. Save to /kaggle/working so it persists.
+!mkdir -p /kaggle/working/checkpoints_de
+!python scripts/finetune_de.py \
+    --metadata data/thorsten/metadata.csv \
+    --wavs-dir data/thorsten/wavs \
+    --english-ckpt checkpoints/G.pth \
+    --ckpt-dir /kaggle/working/checkpoints_de \
+    --batch-size 8 \
+    --device cuda
+```
+
+After the session ends, the checkpoint is saved as a notebook output. To
+continue across sessions: in the next notebook, *Add Data → your previous
+notebook's output*, then pass `--english-ckpt
+/kaggle/input/<previous-notebook>/checkpoints_de/G_<step>.pth` so the
+trainer warm-starts from where you left off.
+
+Tips:
+- Disable “Save & Run All” for the cells that print loss every 50 steps —
+  Kaggle truncates very long output streams. Adding `2>&1 | tee
+  training.log` lets you scroll the file separately.
+- Don't close the browser tab; Kaggle pauses background sessions after a
+  few minutes idle. Pin the tab.
+
+### Vast.ai (cheapest paid)
 
 1. Sign up at vast.ai, add $20 credit.
 2. Search → filter `GPU Total RAM ≥ 24 GB`, sort by `$/hr`.
