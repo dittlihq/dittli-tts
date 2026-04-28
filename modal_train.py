@@ -104,10 +104,15 @@ def train(max_steps: int | None = None, batch_size: int = 8) -> None:
     ], check=True)
 
     # Resume-from-volume: pick the highest-step German checkpoint if any,
-    # else fall back to the English warm-start.
+    # else fall back to the English warm-start. Non-numeric step names
+    # (e.g. G_final.pth) are skipped — the trainer always saves a numbered
+    # checkpoint at the same step as G_final.pth, so we lose nothing.
+    def _ckpt_step(path: str) -> int:
+        suffix = os.path.basename(path)[len("G_"):-len(".pth")]
+        return int(suffix) if suffix.isdigit() else -1
     de_ckpts = sorted(
-        glob.glob("checkpoints_de/G_*.pth"),
-        key=lambda p: int(os.path.basename(p).split("_")[1].split(".")[0]),
+        (p for p in glob.glob("checkpoints_de/G_*.pth") if _ckpt_step(p) >= 0),
+        key=_ckpt_step,
     )
     extra_args: list[str] = []
     if de_ckpts:
