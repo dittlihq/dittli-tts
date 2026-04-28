@@ -282,10 +282,36 @@ Both the Python (PyPI) and Node.js (npm) packages share the same ONNX model and 
 
 ## TODO
 
-- [ ] Public source code for training
+- [x] Public source code for training (see [TRAINING_DE.md](TRAINING_DE.md))
 - [ ] Add more English speakers
 - [ ] Add ultra-lightweight zero-shot voice cloning
 - [x] Release an even smaller model version while maintaining high accuracy
+- [x] Add German support (Phoneme G2P + training pipeline ready; checkpoint pending)
+
+## Multi-language
+
+TinyTTS now ships with a **language-agnostic browser runtime**: pair an
+`.onnx` with a small `.json` metadata sidecar describing the language,
+symbol table, and tone offset, and the npm package picks the right G2P
+automatically.
+
+```javascript
+const TinyTTS = require('tiny-tts');
+
+// English (default)
+const en = new TinyTTS({ modelPath: './tinytts.onnx' });
+await en.speak('Hello world!', 'en.wav');
+
+// German — same code, different model + sidecar
+const de = new TinyTTS({ modelPath: './tinytts-de.onnx' });
+await de.speak('Guten Morgen, wie geht es dir?', 'de.wav');
+```
+
+Sidecars live alongside the ONNX file (`tinytts-en.json` / `tinytts-de.json`).
+Metadata generator: `python scripts/gen_metadata.py`. Implementation status
+and resumption notes: [PROGRESS.md](PROGRESS.md). Training a German
+checkpoint on Thorsten Voice: [TRAINING_DE.md](TRAINING_DE.md).
+
 
 ---
 
