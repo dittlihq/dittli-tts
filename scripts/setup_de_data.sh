@@ -22,20 +22,31 @@ flatten_dataset() {
     # If extraction left a single nested top-level dir containing wavs/,
     # move its contents up to $DATA_DIR. Also strip macOS resource-fork dirs
     # that ship inside the Zenodo zip.
+    # Uses shell globbing rather than `find`, which by default refuses to
+    # descend into a symlinked starting-point dir (e.g. when $DATA_DIR is
+    # symlinked to ephemeral storage like /tmp/thorsten).
     rm -rf "$DATA_DIR/__MACOSX"
-    if [ ! -d "$DATA_DIR/wavs" ]; then
-        local nested
-        nested=$(find "$DATA_DIR" -mindepth 2 -maxdepth 2 -type d -name wavs \
-                    -not -path "*/__MACOSX/*" -print -quit 2>/dev/null || true)
-        if [ -n "$nested" ]; then
-            local top
-            top=$(dirname "$nested")
-            echo "[setup] flattening $(basename "$top")/ into $DATA_DIR ..."
-            shopt -s dotglob
-            mv "$top"/* "$DATA_DIR"/
-            shopt -u dotglob
-            rmdir "$top" 2>/dev/null || true
+    if [ -d "$DATA_DIR/wavs" ]; then
+        return
+    fi
+    local top=""
+    shopt -s nullglob
+    for d in "$DATA_DIR"/*/; do
+        if [ -d "${d}wavs" ]; then
+            top="${d%/}"
+            break
         fi
+    done
+    shopt -u nullglob
+    if [ -n "$top" ]; then
+        echo "[setup] flattening $(basename "$top")/ into $DATA_DIR ..."
+        shopt -s dotglob
+        mv "$top"/* "$DATA_DIR"/
+        shopt -u dotglob
+        rmdir "$top" 2>/dev/null || true
+    else
+        echo "[setup] flatten_dataset: no nested wavs/ dir found under $DATA_DIR" >&2
+        ls -la "$DATA_DIR" >&2 || true
     fi
 }
 
