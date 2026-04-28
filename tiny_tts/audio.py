@@ -10,13 +10,14 @@ import math
 import torch
 from torch import nn
 
-import torchaudio
+import soundfile as sf
 import torchaudio.functional as AF
 
 
 def load_audio(path: str, sr: int) -> torch.Tensor:
     """Load and (if needed) resample a wav to mono `sr`. Returns [T]."""
-    wav, file_sr = torchaudio.load(path)
+    data, file_sr = sf.read(path, dtype="float32", always_2d=True)
+    wav = torch.from_numpy(data.T)  # [C, T]
     if wav.shape[0] > 1:
         wav = wav.mean(0, keepdim=True)
     if file_sr != sr:
