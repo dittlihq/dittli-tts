@@ -1,6 +1,6 @@
 /**
  * English grapheme-to-phoneme — extracted from the original index.js.
- * Mirrors tiny_tts/text/english.py: CMU dictionary lookup with a neural G2P
+ * Mirrors dittli_tts/text/english.py: CMU dictionary lookup with a neural G2P
  * fallback (g2p_predict.js) for OOV words.
  */
 const fs = require("node:fs");
@@ -13,12 +13,12 @@ if (fs.existsSync(_cmuDictPath)) {
   try {
     CMU = JSON.parse(fs.readFileSync(_cmuDictPath, "utf-8"));
   } catch (e) {
-    console.warn("[TinyTTS] Failed to load cmudict.json:", e.message);
+    console.warn("[DittliTTS] Failed to load cmudict.json:", e.message);
   }
 }
 if (Object.keys(CMU).length === 0) {
   console.warn(
-    "[TinyTTS] cmudict.json missing; English G2P will lean heavily on the neural fallback.",
+    "[DittliTTS] cmudict.json missing; English G2P will lean heavily on the neural fallback.",
   );
 }
 

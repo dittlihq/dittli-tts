@@ -1,4 +1,4 @@
-"""Fine-tune the English TinyTTS checkpoint on Thorsten Voice (German).
+"""Fine-tune the English DittliTTS checkpoint on Thorsten Voice (German).
 
 Steps:
 1. Load the existing English G.pth.
@@ -28,13 +28,13 @@ import torch
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from tiny_tts.text.symbols import symbols as new_symbols
-from tiny_tts.train import Trainer, TrainerConfig
-from tiny_tts.utils.remap_checkpoint import (
+from dittli_tts.text.symbols import symbols as new_symbols
+from dittli_tts.train import Trainer, TrainerConfig
+from dittli_tts.utils.remap_checkpoint import (
     load_old_symbols,
     remap_state_dict,
 )
-from tiny_tts.utils.train_config import (
+from dittli_tts.utils.train_config import (
     BATCH_SIZE,
     LEARNING_RATE,
     LOG_INTERVAL,

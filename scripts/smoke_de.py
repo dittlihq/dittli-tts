@@ -25,23 +25,23 @@ import torch
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO_ROOT)
 
-from tiny_tts.audio import (
+from dittli_tts.audio import (
     commons_extract,
     mel_spectrogram_torch,
     spec_to_mel_torch,
 )
-from tiny_tts.data.dataset import ThorstenDataset, collate, compute_and_cache
-from tiny_tts.losses import (
+from dittli_tts.data.dataset import ThorstenDataset, collate, compute_and_cache
+from dittli_tts.losses import (
     discriminator_loss,
     feature_matching_loss,
     generator_loss,
     kl_loss,
     mel_loss,
 )
-from tiny_tts.models.discriminator import MultiPeriodDiscriminator
-from tiny_tts.models.synthesizer import VoiceSynthesizer
-from tiny_tts.text.symbols import symbols
-from tiny_tts.utils.config import (
+from dittli_tts.models.discriminator import MultiPeriodDiscriminator
+from dittli_tts.models.synthesizer import VoiceSynthesizer
+from dittli_tts.text.symbols import symbols
+from dittli_tts.utils.config import (
     FILTER_LENGTH,
     HOP_LENGTH,
     MODEL_PARAMS,
@@ -49,7 +49,7 @@ from tiny_tts.utils.config import (
     SEGMENT_FRAMES,
     SPEC_CHANNELS,
 )
-from tiny_tts.utils.train_config import (
+from dittli_tts.utils.train_config import (
     C_DUR,
     C_KL,
     C_MEL,

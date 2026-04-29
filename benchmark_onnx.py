@@ -14,12 +14,12 @@ import soundfile as sf
 TEXT = "The weather is nice today, and I feel very relaxed."
 N_WARMUP = 2
 N_RUNS   = 5
-_TMP_WAV = os.path.join(tempfile.gettempdir(), "_tinytts_bench.wav")
+_TMP_WAV = os.path.join(tempfile.gettempdir(), "_dittli_bench.wav")
 
 
 def bench_pytorch(ckpt: str, device: str = "cpu"):
-    from tiny_tts.infer import load_engine, synthesize
-    from tiny_tts.utils.config import SAMPLING_RATE
+    from dittli_tts.infer import load_engine, synthesize
+    from dittli_tts.utils.config import SAMPLING_RATE
 
     model = load_engine(ckpt, device=device)
     model.eval()
@@ -38,10 +38,10 @@ def bench_pytorch(ckpt: str, device: str = "cpu"):
 
 
 def bench_onnx(onnx_dir: str, use_gpu: bool = False):
-    from tiny_tts.infer_onnx import OnnxTinyTTS
-    from tiny_tts.utils.config import SAMPLING_RATE
+    from dittli_tts.infer_onnx import OnnxDittliTTS
+    from dittli_tts.utils.config import SAMPLING_RATE
 
-    engine = OnnxTinyTTS(onnx_dir=onnx_dir, use_gpu=use_gpu)
+    engine = OnnxDittliTTS(onnx_dir=onnx_dir, use_gpu=use_gpu)
 
     # warm-up
     for _ in range(N_WARMUP):
@@ -77,7 +77,7 @@ def main():
     args = parser.parse_args()
 
     print(f"\n{'='*65}")
-    print("  TinyTTS Inference Benchmark")
+    print("  DittliTTS Inference Benchmark")
     print(f"  Text : {TEXT}")
     print(f"  Runs : {N_WARMUP} warm-up + {N_RUNS} timed")
     print(f"{'='*65}\n")
@@ -87,7 +87,7 @@ def main():
     pt_times, sr = bench_pytorch(args.checkpoint, device=args.device)
 
     # Measure audio length from a real run
-    from tiny_tts.infer import load_engine, synthesize
+    from dittli_tts.infer import load_engine, synthesize
     model = load_engine(args.checkpoint, device=args.device)
     synthesize(TEXT, _TMP_WAV, model, speaker="female", device=args.device)
     audio_data, _ = sf.read(_TMP_WAV)

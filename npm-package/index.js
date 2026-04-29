@@ -1,5 +1,5 @@
 /**
- * TinyTTS - Pure Node.js text-to-speech via ONNX Runtime
+ * DittliTTS - Pure Node.js text-to-speech via ONNX Runtime
  *
  * Loads a model + a metadata sidecar (JSON) describing the language, symbol
  * table, language ID, tone offset and sample rate. The metadata picks the
@@ -7,8 +7,8 @@
  * change language — no code changes required.
  *
  * Usage:
- *   const TinyTTS = require('tiny-tts');
- *   const tts = new TinyTTS({ modelPath: './tinytts-de.onnx' });
+ *   const DittliTTS = require('dittli-tts');
+ *   const tts = new DittliTTS({ modelPath: './dittli-de.onnx' });
  *   await tts.speak('Guten Morgen', 'output.wav');
  */
 
@@ -27,16 +27,16 @@ const G2P_BY_LANG = {
   de: graphemeToPhonemeDE,
 };
 
-const HF_URL = "https://huggingface.co/backtracking/tiny-tts/resolve/main/tinytts.onnx";
+const HF_URL = "https://huggingface.co/backtracking/dittli-tts/resolve/main/dittli.onnx";
 
 // Default English metadata, used when an .onnx is loaded without a sidecar
 // (so the auto-download path keeps working without an extra file).
-const DEFAULT_EN_METADATA_PATH = path.join(__dirname, "..", "models", "tinytts-en.json");
+const DEFAULT_EN_METADATA_PATH = path.join(__dirname, "..", "models", "dittli-en.json");
 
 async function _download(url, dest) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith("https") ? https : http;
-    const opts = { headers: { "User-Agent": "tiny-tts-node/5.1" } };
+    const opts = { headers: { "User-Agent": "dittli-tts-node/5.1" } };
 
     function fetch(u) {
       client
@@ -89,7 +89,7 @@ function _insertBlanks(arr) {
   return out;
 }
 
-class TinyTTS {
+class DittliTTS {
   constructor(opts = {}) {
     this.modelPath = opts.modelPath || null;
     this.metadataPath = opts.metadataPath || null;
@@ -107,10 +107,10 @@ class TinyTTS {
     if (!modelPath) {
       const dir = path.join(__dirname, "..", "models");
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      modelPath = path.join(dir, "tinytts.onnx");
+      modelPath = path.join(dir, "dittli.onnx");
 
       if (!fs.existsSync(modelPath)) {
-        console.log("Downloading TinyTTS ONNX model (~6 MB)...");
+        console.log("Downloading DittliTTS ONNX model (~6 MB)...");
         await _download(HF_URL, modelPath);
         console.log("Model saved to", modelPath);
       }
@@ -186,7 +186,7 @@ class TinyTTS {
       sidValue = spk2id[speakerName];
     } else if (speakerName) {
       console.warn(
-        `[TinyTTS] Unknown speaker "${speakerName}", using ID 0. ` +
+        `[DittliTTS] Unknown speaker "${speakerName}", using ID 0. ` +
           `Known: ${Object.keys(spk2id).join(", ") || "(none)"}`,
       );
     }
@@ -236,4 +236,4 @@ class TinyTTS {
   }
 }
 
-module.exports = TinyTTS;
+module.exports = DittliTTS;

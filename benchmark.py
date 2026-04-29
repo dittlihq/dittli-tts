@@ -1,5 +1,5 @@
 """
-Fair benchmark: TinyTTS vs Piper vs Kokoro ONNX vs KittenTTS nano/mini vs Pocket-TTS vs Supertonic
+Fair benchmark: DittliTTS vs Piper vs Kokoro ONNX vs KittenTTS nano/mini vs Pocket-TTS vs Supertonic
 All CPU-only, same sentence, same warmup+timing protocol.
 """
 import os
@@ -15,8 +15,8 @@ import soundfile as sf
 _orig_np_load = np.load
 np.load = lambda *a, **kw: _orig_np_load(*a, **{**kw, "allow_pickle": True})
 
-sys.path.insert(0, r"c:\Users\VALTEC-07\Desktop\tiny-tts")
-os.chdir(r"c:\Users\VALTEC-07\Desktop\tiny-tts")
+sys.path.insert(0, r"c:\Users\VALTEC-07\Desktop\dittli-tts")
+os.chdir(r"c:\Users\VALTEC-07\Desktop\dittli-tts")
 
 TEXT     = "The weather is nice today, and I feel very relaxed."
 N_WARMUP = 5
@@ -45,30 +45,30 @@ def bench(name, fn_warmup, fn_run, get_audio_path):
     return dict(ttfa=ttfa, total=med, audio=audio_secs, rtfx=audio_secs/med)
 
 
-# ── 1. TinyTTS (PyTorch) ──────────────────────────────────────────────────────
-print("\n[1] TinyTTS (PyTorch)...")
-from tiny_tts.infer import load_engine, synthesize
+# ── 1. DittliTTS (PyTorch) ──────────────────────────────────────────────────────
+print("\n[1] DittliTTS (PyTorch)...")
+from dittli_tts.infer import load_engine, synthesize
 
 tiny_model = load_engine("G_150000.pth", device="cpu")
-results["TinyTTS (PyTorch)"] = bench(
-    "TinyTTS",
+results["DittliTTS (PyTorch)"] = bench(
+    "DittliTTS",
     lambda: synthesize(TEXT, TMP.format("tiny_w"), tiny_model, speaker="MALE", device="cpu"),
     lambda i: synthesize(TEXT, TMP.format(f"tiny{i}"), tiny_model, speaker="MALE", device="cpu"),
     lambda i: TMP.format(f"tiny{i}"),
 )
 
 
-# ── 1b. TinyTTS (ONNX) ────────────────────────────────────────────────────────
-print("\n[1b] TinyTTS (ONNX)...")
+# ── 1b. DittliTTS (ONNX) ────────────────────────────────────────────────────────
+print("\n[1b] DittliTTS (ONNX)...")
 try:
     import onnxruntime as ort
 
-    from tiny_tts.nn import commons
-    from tiny_tts.text import phonemes_to_ids
-    from tiny_tts.text.english import grapheme_to_phoneme, normalize_text
-    from tiny_tts.utils.config import ADD_BLANK, SPK2ID
+    from dittli_tts.nn import commons
+    from dittli_tts.text import phonemes_to_ids
+    from dittli_tts.text.english import grapheme_to_phoneme, normalize_text
+    from dittli_tts.utils.config import ADD_BLANK, SPK2ID
     
-    onnx_sess = ort.InferenceSession("tinytts.onnx", providers=["CPUExecutionProvider"])
+    onnx_sess = ort.InferenceSession("dittli.onnx", providers=["CPUExecutionProvider"])
     
     def run_tiny_onnx(tag):
         # Text to phonemes
@@ -101,14 +101,14 @@ try:
         audio = out[0, 0]
         sf.write(TMP.format(tag), audio, 44100)
         
-    results["TinyTTS (ONNX)"] = bench(
-        "TinyTTS-ONNX",
+    results["DittliTTS (ONNX)"] = bench(
+        "DittliTTS-ONNX",
         lambda: run_tiny_onnx("tonnx_w"),
         lambda i: run_tiny_onnx(f"tonnx{i}"),
         lambda i: TMP.format(f"tonnx{i}"),
     )
 except Exception as e:
-    print(f"  TinyTTS ONNX FAILED: {e}")
+    print(f"  DittliTTS ONNX FAILED: {e}")
 
 
 
@@ -308,7 +308,7 @@ print("="*W)
 print(f"  {'ENGINE':<24} | {'TTFA(ms)':>8} | {'TOTAL(s)':>8} | {'AUDIO(s)':>8} | RTFx")
 print("-"*W)
 for name, r in results.items():
-    mark = " 🏆" if name.startswith("TinyTTS") else ""
+    mark = " 🏆" if name.startswith("DittliTTS") else ""
     print(f"  {name:<24} | {r['ttfa']:>8.0f} | {r['total']:>8.3f} | {r['audio']:>8.3f} | {r['rtfx']:.1f}x{mark}")
 print("="*W)
 

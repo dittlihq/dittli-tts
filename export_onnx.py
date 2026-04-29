@@ -1,8 +1,8 @@
-"""Export TinyTTS to ONNX and write the model metadata sidecar JSON.
+"""Export DittliTTS to ONNX and write the model metadata sidecar JSON.
 
 Run from the repo root:
     python export_onnx.py --checkpoint checkpoints/G.pth \
-        --out models/tinytts.onnx --lang EN
+        --out models/dittli.onnx --lang EN
 """
 import argparse
 import json
@@ -14,15 +14,15 @@ import torch
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, REPO_ROOT)
 
-from tiny_tts.infer import load_engine
-from tiny_tts.text.symbols import (
+from dittli_tts.infer import load_engine
+from dittli_tts.text.symbols import (
     language_id_map,
     language_tone_start_map,
 )
-from tiny_tts.text.symbols import (
+from dittli_tts.text.symbols import (
     symbols as new_symbols,
 )
-from tiny_tts.utils.config import SAMPLING_RATE
+from dittli_tts.utils.config import SAMPLING_RATE
 
 
 def _resolve_symbols(lang: str) -> list[str]:
@@ -71,7 +71,7 @@ class _OnnxWrapper(torch.nn.Module):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--checkpoint", required=True, help="Path to G.pth")
-    p.add_argument("--out", default="models/tinytts.onnx", help="Output .onnx path")
+    p.add_argument("--out", default="models/dittli.onnx", help="Output .onnx path")
     p.add_argument("--lang", default="EN", help="Language code (EN, DE, …)")
     p.add_argument("--spk2id", default=None,
                    help='JSON dict, e.g. \'{"MALE":0}\' — defaults match the language')

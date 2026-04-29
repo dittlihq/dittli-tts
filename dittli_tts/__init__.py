@@ -3,20 +3,20 @@ import os
 import soundfile as sf
 import torch
 
-from tiny_tts.infer import load_engine
-from tiny_tts.models.synthesizer import VoiceSynthesizer as VoiceSynthesizer
-from tiny_tts.nn import commons
-from tiny_tts.text import phonemes_to_ids
-from tiny_tts.text.english import grapheme_to_phoneme, normalize_text
-from tiny_tts.text.symbols import symbols as symbols
-from tiny_tts.utils.config import (
+from dittli_tts.infer import load_engine
+from dittli_tts.models.synthesizer import VoiceSynthesizer as VoiceSynthesizer
+from dittli_tts.nn import commons
+from dittli_tts.text import phonemes_to_ids
+from dittli_tts.text.english import grapheme_to_phoneme, normalize_text
+from dittli_tts.text.symbols import symbols as symbols
+from dittli_tts.utils.config import (
     ADD_BLANK,
     SAMPLING_RATE,
     SPK2ID,
 )
 
 
-class TinyTTS:
+class DittliTTS:
     def __init__(self, checkpoint_path=None, device=None):
         if device is None:
             self.device = 'cuda' if torch.cuda.is_available() else 'cpu'

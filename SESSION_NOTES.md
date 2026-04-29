@@ -8,7 +8,7 @@ training guide see [TRAINING_DE.md](TRAINING_DE.md).
 
 ## Goal
 
-Take a fork of TinyTTS (1.6 M-param VITS-derived browser TTS, English
+Take a fork of DittliTTS (1.6 M-param VITS-derived browser TTS, English
 only, training code stripped) where Phases 1–5 of the German support
 plan had been implemented but not exercised, and:
 
@@ -19,7 +19,7 @@ plan had been implemented but not exercised, and:
 
 ## Repo & branch
 
-- **Repo:** `github.com/brio1009/tiny-tts`
+- **Repo:** `github.com/brio1009/dittli-tts`
 - **Branch:** `claude/german-implementation-progress-15W8v` (off `develop`)
 
 ## What happened, in order
@@ -31,8 +31,8 @@ Walked through the four cheap gates before any GPU spend:
 | # | Check | Command |
 |---|---|---|
 | 1 | G2P parity (Python ↔ JS) | `python scripts/test_g2p_parity.py` → 805/805 |
-| 2 | Symbol-table size | `python -c "from tiny_tts.text.symbols import symbols; print(len(symbols))"` → 220 |
-| 3 | Dataset preprocess | `python -m tiny_tts.data.preprocess ...` |
+| 2 | Symbol-table size | `python -c "from dittli_tts.text.symbols import symbols; print(len(symbols))"` → 220 |
+| 3 | Dataset preprocess | `python -m dittli_tts.data.preprocess ...` |
 | 4 | CPU smoke test | `python scripts/smoke_de.py ...` |
 
 ### 2. Setup script broken (404)
@@ -59,7 +59,7 @@ existed. Two issues at once:
 In torchaudio ≥ 2.6, `torchaudio.load()` delegates to the separate
 `torchcodec` package, which isn't installed (and pulls FFmpeg).
 
-**Fix:** in `tiny_tts/audio.py`, replaced `torchaudio.load()` with
+**Fix:** in `dittli_tts/audio.py`, replaced `torchaudio.load()` with
 `soundfile.read()` (already in `requirements.txt`). Also fixed
 `_mel_basis()` to use the imported `AF` alias instead of bare
 `torchaudio.functional`.
@@ -86,7 +86,7 @@ Picked **Modal** for ergonomics + free credit coverage.
 ### 6. Created `modal_train.py`
 
 Modal entrypoint with:
-- Persistent volume `tinytts-de` for checkpoints (~50 MB long-term).
+- Persistent volume `dittli-de` for checkpoints (~50 MB long-term).
 - Ephemeral `data/thorsten` symlinked to `/tmp/thorsten` so the ~38 GB
   spec cache doesn't bloat the volume.
 - Resume-from-volume: picks highest numeric `G_<step>.pth` if present,
@@ -130,7 +130,7 @@ modal run --detach modal_train.py
 
 ```bash
 pip install onnxscript onnxruntime
-python export_onnx.py --checkpoint G_de.pth --lang DE --out models/tinytts-de.onnx
+python export_onnx.py --checkpoint G_de.pth --lang DE --out models/dittli-de.onnx
 ```
 
 Initial export failed because newer torch versions default `torch.onnx.export`
@@ -140,13 +140,13 @@ in the SDP).
 
 **Fix:** added `dynamo=False` to force the legacy TorchScript tracer.
 FP32 export succeeded (~6 MB), then FP16 conversion via `onnxruntime`
-produced `models/tinytts-de_fp16.onnx` (~3 MB).
+produced `models/dittli-de_fp16.onnx` (~3 MB).
 
 ### 11. End-to-end browser path verified
 
 ```bash
 node npm-package/bin/cli.js "Guten Morgen, wie geht es dir?" \
-    --model models/tinytts-de.onnx -o de.wav
+    --model models/dittli-de.onnx -o de.wav
 ```
 
 Produced intelligible German. Done.
@@ -154,17 +154,17 @@ Produced intelligible German. Done.
 ## Final artifacts
 
 - `G_de.pth` — local checkpoint (`*.pth` is gitignored; pull from Modal
-  volume `tinytts-de` at `checkpoints_de/G_final.pth`).
-- `models/tinytts-de.onnx` (FP32, ~6 MB).
-- `models/tinytts-de_fp16.onnx` (FP16, ~3 MB).
-- `models/tinytts-de.json` — sidecar (committed).
+  volume `dittli-de` at `checkpoints_de/G_final.pth`).
+- `models/dittli-de.onnx` (FP32, ~6 MB).
+- `models/dittli-de_fp16.onnx` (FP16, ~3 MB).
+- `models/dittli-de.json` — sidecar (committed).
 
 ## Files changed this session
 
 **Modified:**
 - `scripts/setup_de_data.sh` — Zenodo URL, format detection, glob-based
   flatten, metadata concatenation, idempotent recovery.
-- `tiny_tts/audio.py` — soundfile-based loader.
+- `dittli_tts/audio.py` — soundfile-based loader.
 - `export_onnx.py` — `dynamo=False`.
 
 **Created:**
@@ -195,7 +195,7 @@ Produced intelligible German. Done.
 
 - **Persistent Modal data volume** to skip ~13 min cold-start
   download + preprocess on reruns. Only worth it for multi-run iteration.
-- **Per-language npm split** (`tiny-tts-en`, `tiny-tts-de`) so users
+- **Per-language npm split** (`dittli-tts-en`, `dittli-tts-de`) so users
   only ship the G2P assets they need.
 - **Angular integration pattern** — lazy `import()` of the package
   inside a feature module, `<link rel="prefetch">` for the ONNX so

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-const TinyTTS = require("../index");
+const DittliTTS = require("../index");
 const { Command } = require("commander");
 
 const program = new Command();
 
 program
-  .name("tiny-tts")
+  .name("dittli-tts")
   .description("Ultra-lightweight text-to-speech (1.6M params) — pure Node.js ONNX inference")
   .version("4.0.0")
   .argument("<text>", "Text to synthesize")
@@ -21,7 +21,7 @@ program
   .option("--device <dev>", "Device: cpu or gpu", "cpu")
   .action(async (text, options) => {
     try {
-      const tts = new TinyTTS({
+      const tts = new DittliTTS({
         modelPath: options.model,
         metadataPath: options.metadata,
         device: options.device,

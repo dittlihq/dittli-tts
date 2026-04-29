@@ -27,9 +27,9 @@ def _install_pkg_shim(name: str, dir_path: str) -> None:
     sys.modules[name] = pkg
 
 
-_install_pkg_shim("tiny_tts", os.path.join(ROOT, "tiny_tts"))
+_install_pkg_shim("dittli_tts", os.path.join(ROOT, "dittli_tts"))
 
-from tiny_tts.text import german as g  # noqa: E402
+from dittli_tts.text import german as g  # noqa: E402
 
 
 def python_phones(word: str) -> list[str]:

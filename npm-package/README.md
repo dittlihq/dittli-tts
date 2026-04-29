@@ -1,24 +1,24 @@
-# TinyTTS
+# DittliTTS
 
 **Ultra-lightweight Text-to-Speech for Node.js — 1.6M params, 44.1kHz, ~53x real-time on CPU.**
 
-[![npm](https://img.shields.io/npm/v/tiny-tts?color=green)](https://www.npmjs.com/package/tiny-tts)
-[![PyPI](https://img.shields.io/pypi/v/tiny-tts?color=blue)](https://pypi.org/project/tiny-tts/)
+[![npm](https://img.shields.io/npm/v/dittli-tts?color=green)](https://www.npmjs.com/package/dittli-tts)
+[![PyPI](https://img.shields.io/pypi/v/dittli-tts?color=blue)](https://pypi.org/project/dittli-tts/)
 
 Pure Node.js offline TTS inference via ONNX Runtime. **Zero Python dependency.** The ONNX model (~6 MB) is auto-downloaded from HuggingFace on first use.
 
 ## Installation
 
 ```bash
-npm install tiny-tts
+npm install dittli-tts
 ```
 
 ## Quick Start
 
 ```javascript
-const TinyTTS = require('tiny-tts');
+const DittliTTS = require('dittli-tts');
 
-const tts = new TinyTTS();
+const tts = new DittliTTS();
 
 // Synthesize and save to WAV
 await tts.speak('Hello world!', { output: 'hello.wav' });
@@ -38,10 +38,10 @@ await tts.dispose();
 
 ```bash
 # Basic usage
-npx tiny-tts "Hello world!" -o hello.wav
+npx dittli-tts "Hello world!" -o hello.wav
 
 # With options
-npx tiny-tts "The weather is nice today." -o output.wav -s MALE --speed 1.2
+npx dittli-tts "The weather is nice today." -o output.wav -s MALE --speed 1.2
 ```
 
 ## Features
@@ -55,7 +55,7 @@ npx tiny-tts "The weather is nice today." -o output.wav -s MALE --speed 1.2
 
 ## API
 
-### `new TinyTTS(options?)`
+### `new DittliTTS(options?)`
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -101,12 +101,12 @@ Release ONNX session resources.
 Also available on PyPI with the same G2P output:
 
 ```bash
-pip install tiny-tts
+pip install dittli-tts
 ```
 
 ```python
-from tiny_tts import TinyTTS
-tts = TinyTTS()
+from dittli_tts import DittliTTS
+tts = DittliTTS()
 tts.speak("Hello world!", output_path="hello.wav")
 ```
 
@@ -116,7 +116,7 @@ Apache License 2.0
 
 ## Links
 
-- **GitHub**: [github.com/tronghieuit/tiny-tts](https://github.com/tronghieuit/tiny-tts)
-- **PyPI**: [pypi.org/project/tiny-tts](https://pypi.org/project/tiny-tts/)
-- **npm**: [npmjs.com/package/tiny-tts](https://www.npmjs.com/package/tiny-tts)
-- **Demo**: [huggingface.co/spaces/backtracking/tiny-tts-demo](https://huggingface.co/spaces/backtracking/tiny-tts-demo)
+- **GitHub**: [github.com/tronghieuit/dittli-tts](https://github.com/tronghieuit/dittli-tts)
+- **PyPI**: [pypi.org/project/dittli-tts](https://pypi.org/project/dittli-tts/)
+- **npm**: [npmjs.com/package/dittli-tts](https://www.npmjs.com/package/dittli-tts)
+- **Demo**: [huggingface.co/spaces/backtracking/dittli-tts-demo](https://huggingface.co/spaces/backtracking/dittli-tts-demo)

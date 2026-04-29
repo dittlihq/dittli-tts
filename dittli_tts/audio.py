@@ -1,7 +1,7 @@
 """STFT + mel utilities for training and dataset preprocessing.
 
 Uses torchaudio for spectrograms and mel filterbanks. Hyperparameters come
-from tiny_tts.utils.config so the values match what the model was trained
+from dittli_tts.utils.config so the values match what the model was trained
 with originally (44.1 kHz, n_fft=2048, hop=512, n_mels=128).
 """
 from __future__ import annotations

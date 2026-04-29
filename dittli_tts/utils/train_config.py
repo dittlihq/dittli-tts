@@ -1,6 +1,6 @@
 """Hyperparameters used during training (not at inference time).
 
-Inference-time hyperparameters live in `tiny_tts.utils.config`. We keep them
+Inference-time hyperparameters live in `dittli_tts.utils.config`. We keep them
 separated so importing inference utilities never pulls training defaults.
 """
 

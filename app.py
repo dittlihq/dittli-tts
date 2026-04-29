@@ -1,7 +1,7 @@
 import gradio as gr
 import nltk
 
-from tiny_tts import TinyTTS
+from dittli_tts import DittliTTS
 
 # Download required NLTK data for g2p-en
 try:
@@ -12,8 +12,8 @@ except Exception as e:
     print(f"NLTK download warning: {e}")
 
 # Initialize the model (auto-downloads from HF Hub if needed)
-print("Initializing TinyTTS...")
-tts = TinyTTS()
+print("Initializing DittliTTS...")
+tts = DittliTTS()
 print("Model loaded successfully!")
 
 
@@ -33,9 +33,9 @@ All numbers are **CPU-only** on the same Intel Core laptop. Text: *"The weather 
 
 | ENGINE | Params | Total (s) | Audio (s) | RTFx |
 |:---|---:|---:|---:|---:|
-| **TinyTTS (ONNX) 🚀** | **1.6M** | **0.092** | **4.88** | **~53x** |
+| **DittliTTS (ONNX) 🚀** | **1.6M** | **0.092** | **4.88** | **~53x** |
 | Piper (ONNX, 22kHz) | ~63M | 0.112 | 2.91 | ~26x |
-| TinyTTS (PyTorch) | 1.6M | 0.272 | 4.88 | ~18x |
+| DittliTTS (PyTorch) | 1.6M | 0.272 | 4.88 | ~18x |
 | KittenTTS nano | ~10M | 0.286 | 4.87 | ~17x |
 | Supertonic (2-step) | ~82M | 0.249 | 3.69 | ~15x |
 | Pocket-TTS | 100M | 0.928 | 3.68 | ~4x |
@@ -43,12 +43,12 @@ All numbers are **CPU-only** on the same Intel Core laptop. Text: *"The weather 
 | KittenTTS mini | ~25M | 2.047 | 4.17 | ~2x |
 
 > **RTFx** = Audio Duration ÷ Synthesis Time (higher = faster).
-> TinyTTS achieves the **best speed-to-size ratio**: only **1.6M params** / **3.4 MB** ONNX yet ~53× real-time at 44.1kHz.
+> DittliTTS achieves the **best speed-to-size ratio**: only **1.6M params** / **3.4 MB** ONNX yet ~53× real-time at 44.1kHz.
 """
 
 # Create Gradio interface
-with gr.Blocks(title="TinyTTS Demo", theme=gr.themes.Soft()) as app:
-    gr.Markdown("# 🗣️ TinyTTS")
+with gr.Blocks(title="DittliTTS Demo", theme=gr.themes.Soft()) as app:
+    gr.Markdown("# 🗣️ DittliTTS")
     gr.Markdown(
         "**Ultra-lightweight English Text-to-Speech — only 1.6M parameters, ~3.4 MB ONNX**\n\n"
         "This space runs on CPU efficiently and synthesizes high-quality 44.1kHz audio **~53× faster** than real-time."
@@ -78,7 +78,7 @@ with gr.Blocks(title="TinyTTS Demo", theme=gr.themes.Soft()) as app:
     gr.Examples(
         examples=[
             ["The weather is nice today, and I feel very relaxed.", 1.0],
-            ["TinyTTS has only one point six million parameters, making it extremely fast on CPUs.", 1.0],
+            ["DittliTTS has only one point six million parameters, making it extremely fast on CPUs.", 1.0],
             ["This is a speed test. Speaking at one and a half times the normal rate.", 1.5],
             ["Slow and steady wins the race. Let me speak more carefully.", 0.7],
         ],

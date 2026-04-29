@@ -9,7 +9,7 @@ interface ModelMetadata {
   spk2id?: Record<string, number>;
 }
 
-declare class TinyTTS {
+declare class DittliTTS {
   constructor(options?: {
     modelPath?: string;
     metadataPath?: string;
@@ -40,4 +40,4 @@ declare class TinyTTS {
   dispose(): Promise<void>;
 }
 
-export default TinyTTS;
+export default DittliTTS;

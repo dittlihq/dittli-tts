@@ -2,7 +2,7 @@
 
 ## Context
 
-The user has forked TinyTTS — a 1.6M-parameter VITS-derived TTS model that runs in the browser via ONNX. The published model is English-only and the **training code has been stripped** from the repo (`VoiceSynthesizer` only has `infer()`, no `forward()`; no discriminator, no loss module, no dataset, no training loop).
+The user has forked DittliTTS — a 1.6M-parameter VITS-derived TTS model that runs in the browser via ONNX. The published model is English-only and the **training code has been stripped** from the repo (`VoiceSynthesizer` only has `infer()`, no `forward()`; no discriminator, no loss module, no dataset, no training loop).
 
 The user wants to:
 1. Add German support and train a German checkpoint
@@ -20,7 +20,7 @@ Decisions (confirmed):
 
 ## Phase 1 — Symbol Table & Phoneme Inventory
 
-**File:** [tiny_tts/text/symbols.py](tiny_tts/text/symbols.py#L246)
+**File:** [dittli_tts/text/symbols.py](dittli_tts/text/symbols.py#L246)
 
 The combined symbol list is built as `sorted(set(zh + ja + en + … + de + ru))`, so **adding any new symbol shifts every phoneme ID alphabetically after it** — breaks fine-tuning unless we remap the embedding.
 
@@ -43,7 +43,7 @@ All but `y` and the long-vowel-with-ː pairs are already in the union of existin
 3. Update `de_symbols = ["ʏ", "̩", "yː"]` (one new symbol).
 
 ### Embedding remapper
-**New file:** `tiny_tts/utils/remap_checkpoint.py`
+**New file:** `dittli_tts/utils/remap_checkpoint.py`
 
 Given old `symbols` and new `symbols`, build a lookup `old_idx → new_idx` for every overlapping symbol. For `enc_p.emb.weight` (shape `[old_n_vocab, hidden]` → `[new_n_vocab, hidden]`), copy rows for matching symbols, randomly init new rows. Used once before fine-tuning.
 
@@ -54,16 +54,16 @@ Given old `symbols` and new `symbols`, build a lookup `old_idx → new_idx` for 
 Both implementations must produce **identical output** for any input — this is critical so the JS browser inference matches the Python training.
 
 ### 2a — Python G2P
-**New file:** [tiny_tts/text/german.py](tiny_tts/text/german.py)
+**New file:** [dittli_tts/text/german.py](dittli_tts/text/german.py)
 
-Public API mirrors [tiny_tts/text/english.py](tiny_tts/text/english.py):
+Public API mirrors [dittli_tts/text/english.py](dittli_tts/text/english.py):
 ```python
 def g2p(text: str) -> tuple[list[str], list[int], list[int]]:
     """Returns (phones, tones, word2ph)."""
 ```
 
 Internals:
-- `normalize_text(text)`: expand German numbers (`123` → `einhundertdreiundzwanzig`), abbreviations (`Dr.` → `Doktor`, `z.B.` → `zum Beispiel`, `usw.` → `und so weiter`), times, dates. Reuse pattern from [tiny_tts/text/english_utils/](tiny_tts/text/english_utils/).
+- `normalize_text(text)`: expand German numbers (`123` → `einhundertdreiundzwanzig`), abbreviations (`Dr.` → `Doktor`, `z.B.` → `zum Beispiel`, `usw.` → `und so weiter`), times, dates. Reuse pattern from [dittli_tts/text/english_utils/](dittli_tts/text/english_utils/).
 - `apply_rules(word)`: greedy longest-match scanner. Rule table is a Python list of `(pattern, output_phonemes_or_callable)`. Context-sensitive rules (`ch`, `st`/`sp`, `r`, `v`) are callables that inspect surrounding chars.
 - `EXCEPTION_DICT`: ~500 common loanwords (Café, Virus, Computer, Genre, …) hardcoded in the file.
 - All phonemes go through `_mapPhoneme()` (already exists in english.py logic) to ensure they're in the symbol table.
@@ -94,7 +94,7 @@ Runs Python G2P and shells out to Node to run JS G2P over the same word list (~1
 ## Phase 3 — Training Infrastructure
 
 ### 3a — `VoiceSynthesizer.forward()` (training pass)
-**File:** [tiny_tts/models/synthesizer.py](tiny_tts/models/synthesizer.py#L666)
+**File:** [dittli_tts/models/synthesizer.py](dittli_tts/models/synthesizer.py#L666)
 
 Insert before `infer()`. Mirrors Bert-VITS2 structure but uses this repo's component names:
 
@@ -124,12 +124,12 @@ def forward(self, x, x_lengths, y, y_lengths, sid, tone, language, bert, ja_bert
 Reuses existing components (`enc_p`, `enc_q`, `flow`, `sdp`, `dp`, `dec`) and existing utilities (`commons.random_segments`, `commons.kl_divergence`, `alignment.core.viterbi_decode_kernel`).
 
 ### 3b — Discriminator
-**New file:** `tiny_tts/models/discriminator.py`
+**New file:** `dittli_tts/models/discriminator.py`
 
 Standard HiFi-GAN `MultiPeriodDiscriminator` + `MultiScaleDiscriminator`. Periods `[2,3,5,7,11]`. ~3M parameters total (only used during training, dropped at inference). Direct adaptation from public HiFi-GAN code.
 
 ### 3c — Losses
-**New file:** `tiny_tts/losses.py`
+**New file:** `dittli_tts/losses.py`
 
 ```python
 def kl_loss(z_p, logs_q, m_p, logs_p, z_mask)         # uses commons.kl_divergence
@@ -140,7 +140,7 @@ def mel_loss(o, y_mel, mel_fn)                         # L1 on mel
 ```
 
 ### 3d — Audio / mel spectrogram
-**New file:** `tiny_tts/audio.py`
+**New file:** `dittli_tts/audio.py`
 
 ```python
 class MelSpectrogram(nn.Module):  # torchaudio.transforms.Spectrogram + MelScale
@@ -149,10 +149,10 @@ def spectrogram_torch(y, n_fft=2048, hop=512, win_size=2048) -> Tensor
 def spec_to_mel_torch(spec, n_fft, n_mels=128, sr=44100, fmin=0, fmax=None) -> Tensor
 ```
 
-Standard torchaudio-based implementation. Hyperparameters from existing [tiny_tts/utils/config.py](tiny_tts/utils/config.py).
+Standard torchaudio-based implementation. Hyperparameters from existing [dittli_tts/utils/config.py](dittli_tts/utils/config.py).
 
 ### 3e — Dataset
-**New file:** `tiny_tts/data/dataset.py`
+**New file:** `dittli_tts/data/dataset.py`
 
 Thorsten Voice ships as `metadata.csv` (`filename|transcript`) + `wavs/*.wav` at 22050 Hz. Pipeline:
 1. Resample to 44100 (model expects 44.1k, see `SAMPLING_RATE` in config) at preprocessing time, cache `.spec.pt` next to each `.wav`.
@@ -161,11 +161,11 @@ Thorsten Voice ships as `metadata.csv` (`filename|transcript`) + `wavs/*.wav` at
 4. BERT/ja_bert tensors filled with zeros (matching how inference handles them in `infer.py`).
 5. Collator pads variable-length sequences and reports lengths.
 
-**New file:** `tiny_tts/data/preprocess.py`
+**New file:** `dittli_tts/data/preprocess.py`
 Pre-computes specs and phoneme IDs for all utterances → speeds up training, fails loudly on bad data.
 
 ### 3f — Training loop
-**New file:** `tiny_tts/train.py`
+**New file:** `dittli_tts/train.py`
 
 Single-GPU, AMP-enabled. Standard VITS training step:
 1. Forward pass through `VoiceSynthesizer.forward()`.
@@ -176,7 +176,7 @@ Single-GPU, AMP-enabled. Standard VITS training step:
 6. Anneal `current_mas_noise_scale` per `noise_scale_delta` (already a field on the model).
 7. Save `G_*.pth` and `D_*.pth` every N steps.
 
-**New file:** `tiny_tts/utils/train_config.py`
+**New file:** `dittli_tts/utils/train_config.py`
 Hyperparameters not currently in config: `LEARNING_RATE = 2e-4`, `BETAS = (0.8, 0.99)`, `LR_DECAY = 0.999875`, `BATCH_SIZE = 16`, `TOTAL_STEPS = 100_000`, loss weights `c_mel=45`, `c_kl=1.0`, `c_dur=1.0`.
 
 ### 3g — Fine-tuning entrypoint
@@ -194,7 +194,7 @@ Hyperparameters not currently in config: `LEARNING_RATE = 2e-4`, `BETAS = (0.8, 
 ### 4a — Model metadata sidecar
 Each shipped ONNX bundle gets a tiny JSON:
 
-**File:** `models/tinytts-de.json` (paired with `tinytts-de.onnx`)
+**File:** `models/dittli-de.json` (paired with `dittli-de.onnx`)
 ```json
 {
   "language": "de",
@@ -206,13 +206,13 @@ Each shipped ONNX bundle gets a tiny JSON:
 }
 ```
 
-`tone_offset` = `language_tone_start_map["DE"]` from [symbols.py:285](tiny_tts/text/symbols.py#L285). `symbols` is the exact symbol list the model was trained with — JS uses it to build its own `SYM` lookup, eliminating the hardcoded array currently at [npm-package/index.js:22](npm-package/index.js#L22).
+`tone_offset` = `language_tone_start_map["DE"]` from [symbols.py:285](dittli_tts/text/symbols.py#L285). `symbols` is the exact symbol list the model was trained with — JS uses it to build its own `SYM` lookup, eliminating the hardcoded array currently at [npm-package/index.js:22](npm-package/index.js#L22).
 
-### 4b — Refactor `TinyTTS` JS class
+### 4b — Refactor `DittliTTS` JS class
 **File:** [npm-package/index.js](npm-package/index.js)
 
 Changes:
-1. Constructor: `new TinyTTS({ modelPath, metadataPath })` — `metadataPath` defaults to `modelPath.replace('.onnx', '.json')`.
+1. Constructor: `new DittliTTS({ modelPath, metadataPath })` — `metadataPath` defaults to `modelPath.replace('.onnx', '.json')`.
 2. `init()` reads metadata, picks G2P based on `language` field:
    ```js
    const G2P = { en: enGraphemeToPhoneme, de: deGraphemeToPhoneme }[meta.language];
@@ -221,7 +221,7 @@ Changes:
 4. Existing English G2P moves to [npm-package/g2p_en.js](npm-package/g2p_en.js) (extract from current `index.js`).
 5. New [npm-package/g2p_de.js](npm-package/g2p_de.js) from Phase 2b.
 
-Result: `tts = new TinyTTS({ modelPath: './tinytts-de.onnx' })` automatically picks German G2P. Replacing the `.onnx` (and its `.json`) is the only thing the user has to do.
+Result: `tts = new DittliTTS({ modelPath: './dittli-de.onnx' })` automatically picks German G2P. Replacing the `.onnx` (and its `.json`) is the only thing the user has to do.
 
 ### 4c — Package additions
 [npm-package/package.json](npm-package/package.json) `files` array gains: `g2p_en.js`, `g2p_de.js`, `g2p_de_rules.json`. The existing `cmudict.json` and `g2p_predict.js` (English neural fallback) stay — German doesn't need them.
@@ -237,7 +237,7 @@ Result: `tts = new TinyTTS({ modelPath: './tinytts-de.onnx' })` automatically pi
 
 Adapt to:
 1. Load the German checkpoint.
-2. Export the same 4 ONNX files (`text_encoder`, `duration_predictor`, `flow`, `decoder`) — or a single bundled `tinytts-de.onnx` to match what `index.js` currently expects (verify by re-reading the export script).
+2. Export the same 4 ONNX files (`text_encoder`, `duration_predictor`, `flow`, `decoder`) — or a single bundled `dittli-de.onnx` to match what `index.js` currently expects (verify by re-reading the export script).
 3. Write the metadata sidecar JSON next to the ONNX.
 
 ---
@@ -245,36 +245,36 @@ Adapt to:
 ## Critical Files Modified vs Created
 
 **Modified:**
-- [tiny_tts/text/symbols.py](tiny_tts/text/symbols.py) — extend `de_symbols`
-- [tiny_tts/text/__init__.py](tiny_tts/text/__init__.py) — register German G2P
-- [tiny_tts/models/synthesizer.py](tiny_tts/models/synthesizer.py) — add `forward()` to `VoiceSynthesizer`
-- [tiny_tts/utils/config.py](tiny_tts/utils/config.py) — `N_SPEAKERS`, `SPK2ID` for Thorsten
+- [dittli_tts/text/symbols.py](dittli_tts/text/symbols.py) — extend `de_symbols`
+- [dittli_tts/text/__init__.py](dittli_tts/text/__init__.py) — register German G2P
+- [dittli_tts/models/synthesizer.py](dittli_tts/models/synthesizer.py) — add `forward()` to `VoiceSynthesizer`
+- [dittli_tts/utils/config.py](dittli_tts/utils/config.py) — `N_SPEAKERS`, `SPK2ID` for Thorsten
 - [npm-package/index.js](npm-package/index.js) — metadata-driven G2P dispatch
 - [npm-package/package.json](npm-package/package.json) — file list
 
 **Created:**
-- `tiny_tts/text/german.py`, `tiny_tts/text/german_utils/` (number/abbrev/time normalization)
-- `tiny_tts/utils/remap_checkpoint.py`
-- `tiny_tts/models/discriminator.py`
-- `tiny_tts/losses.py`, `tiny_tts/audio.py`
-- `tiny_tts/data/dataset.py`, `tiny_tts/data/preprocess.py`
-- `tiny_tts/train.py`, `tiny_tts/utils/train_config.py`
+- `dittli_tts/text/german.py`, `dittli_tts/text/german_utils/` (number/abbrev/time normalization)
+- `dittli_tts/utils/remap_checkpoint.py`
+- `dittli_tts/models/discriminator.py`
+- `dittli_tts/losses.py`, `dittli_tts/audio.py`
+- `dittli_tts/data/dataset.py`, `dittli_tts/data/preprocess.py`
+- `dittli_tts/train.py`, `dittli_tts/utils/train_config.py`
 - `scripts/finetune_de.py`, `scripts/gen_de_rules.py`, `scripts/test_g2p_parity.py`
 - `npm-package/g2p_en.js` (extracted), `npm-package/g2p_de.js`, `npm-package/g2p_de_rules.json`
-- `models/tinytts-en.json`, `models/tinytts-de.json` (sidecars)
+- `models/dittli-en.json`, `models/dittli-de.json` (sidecars)
 
 ---
 
 ## Verification
 
 1. **G2P parity**: `python scripts/test_g2p_parity.py` — Python and JS must produce identical phoneme sequences on a 1000-word German test list.
-2. **Symbol table integrity**: `python -c "from tiny_tts.text.symbols import symbols; print(len(symbols))"` — record the new size; ensure `enc_p.emb` matches it after remapping.
+2. **Symbol table integrity**: `python -c "from dittli_tts.text.symbols import symbols; print(len(symbols))"` — record the new size; ensure `enc_p.emb` matches it after remapping.
 3. **Training smoke test**: run `scripts/finetune_de.py --max-steps 100` on a 10-utterance subset → loss curves must decrease, no NaN, checkpoints save.
 4. **Full fine-tune**: ~50–100k steps on Thorsten (~24h on a single A100, ~3 days on a 3090).
-5. **Inference parity (Python)**: `python -m tiny_tts.infer --lang DE --text "Guten Morgen, wie geht es dir?"` produces intelligible German.
-6. **ONNX export**: `python export_onnx.py --checkpoint G_de.pth --out models/tinytts-de.onnx` — check file size matches expected ~6MB FP16.
-7. **Browser inference**: from the `npm-package/` dir, `node bin/cli.js "Guten Morgen" --model ../models/tinytts-de.onnx -o out.wav` → audible German speech.
-8. **Language switching**: same Node script, `--model ../models/tinytts-en.onnx "Hello"` → audible English. No code changes between the two runs.
+5. **Inference parity (Python)**: `python -m dittli_tts.infer --lang DE --text "Guten Morgen, wie geht es dir?"` produces intelligible German.
+6. **ONNX export**: `python export_onnx.py --checkpoint G_de.pth --out models/dittli-de.onnx` — check file size matches expected ~6MB FP16.
+7. **Browser inference**: from the `npm-package/` dir, `node bin/cli.js "Guten Morgen" --model ../models/dittli-de.onnx -o out.wav` → audible German speech.
+8. **Language switching**: same Node script, `--model ../models/dittli-en.onnx "Hello"` → audible English. No code changes between the two runs.
 9. **Type checking**: `npm run build` (or `tsc --noEmit`) passes against the updated `index.d.ts`.
 
 ---

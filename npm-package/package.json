@@ -1,5 +1,5 @@
 {
-  "name": "tiny-tts",
+  "name": "dittli-tts",
   "version": "5.0.1",
   "description": "Ultra-lightweight text-to-speech (1.6M params). Pure Node.js inference via ONNX Runtime — zero Python dependency.",
   "main": "index.js",
@@ -16,7 +16,7 @@
     "bin/cli.js"
   ],
   "bin": {
-    "tiny-tts": "bin/cli.js"
+    "dittli-tts": "bin/cli.js"
   },
   "keywords": [
     "tts",
@@ -28,17 +28,17 @@
     "edge-tts",
     "offline-tts"
   ],
-  "author": "TinyTTS Contributors",
+  "author": "Dittli TTS Contributors",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tronghieuit/tiny-tts.git",
+    "url": "git+https://github.com/brio1009/dittli-tts.git",
     "directory": "npm-package"
   },
   "bugs": {
-    "url": "https://github.com/tronghieuit/tiny-tts/issues"
+    "url": "https://github.com/brio1009/dittli-tts/issues"
   },
-  "homepage": "https://github.com/tronghieuit/tiny-tts#readme",
+  "homepage": "https://github.com/brio1009/dittli-tts#readme",
   "dependencies": {
     "commander": "^12.0.0",
     "onnxruntime-node": "^1.19.0",

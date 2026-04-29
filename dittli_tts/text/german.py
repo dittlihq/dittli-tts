@@ -1,6 +1,6 @@
 """Rule-based German G2P.
 
-Public API mirrors tiny_tts.text.english:
+Public API mirrors dittli_tts.text.english:
     grapheme_to_phoneme(text)  -> (phones, tones, word2ph)
     normalize_text(text)       -> str
 
@@ -9,7 +9,7 @@ RULES table and EXCEPTION_DICT below are the source of truth — they are
 emitted as JSON (scripts/gen_de_rules.py) so both implementations can stay
 in sync.
 
-Output phonemes use IPA tokens that already exist in tiny_tts.text.symbols
+Output phonemes use IPA tokens that already exist in dittli_tts.text.symbols
 (after appending "yː" to de_symbols). All German tones are 0 (single-tone).
 """
 from __future__ import annotations

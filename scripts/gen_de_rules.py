@@ -4,7 +4,7 @@ The JS port (npm-package/g2p_de.js) reads this JSON so it cannot drift from
 the Python source of truth. Re-run after every edit to german.py /
 abbreviations.py / number_norm.py.
 
-The top-level `tiny_tts/__init__.py` eagerly imports torch, which we don't
+The top-level `dittli_tts/__init__.py` eagerly imports torch, which we don't
 want as a build-time dependency for emitting the JSON. We register an empty
 package shim before importing the text submodule.
 """
@@ -28,10 +28,10 @@ def _install_pkg_shim(name: str, dir_path: str) -> None:
     sys.modules[name] = pkg
 
 
-_install_pkg_shim("tiny_tts", os.path.join(ROOT, "tiny_tts"))
+_install_pkg_shim("dittli_tts", os.path.join(ROOT, "dittli_tts"))
 
-from tiny_tts.text import german as g  # noqa: E402
-from tiny_tts.text.german_utils.abbreviations import _ABBREVIATIONS  # noqa: E402
+from dittli_tts.text import german as g  # noqa: E402
+from dittli_tts.text.german_utils.abbreviations import _ABBREVIATIONS  # noqa: E402
 
 
 def serialize_rules() -> list:

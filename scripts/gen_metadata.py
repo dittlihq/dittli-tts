@@ -26,16 +26,16 @@ def _install_pkg_shim(name: str, dir_path: str) -> None:
     sys.modules[name] = pkg
 
 
-_install_pkg_shim("tiny_tts", os.path.join(ROOT, "tiny_tts"))
+_install_pkg_shim("dittli_tts", os.path.join(ROOT, "dittli_tts"))
 
-from tiny_tts.text.symbols import (
+from dittli_tts.text.symbols import (
     language_id_map,
     language_tone_start_map,
 )
-from tiny_tts.text.symbols import (  # noqa: E402
+from dittli_tts.text.symbols import (  # noqa: E402
     symbols as new_symbols,
 )
-from tiny_tts.utils.config import SAMPLING_RATE  # noqa: E402
+from dittli_tts.utils.config import SAMPLING_RATE  # noqa: E402
 
 
 def build(language: str, phoneme_set: str, spk2id: dict, symbols: list) -> dict:
@@ -67,11 +67,11 @@ def main(out_dir: str) -> None:
     en = build("EN", "english_v1", {"MALE": 0}, en_symbols)
 
     # The German checkpoint will be trained against the new (extended) list,
-    # which is what `from tiny_tts.text.symbols import symbols` returns.
+    # which is what `from dittli_tts.text.symbols import symbols` returns.
     de = build("DE", "german_v1", {"THORSTEN": 0}, list(new_symbols))
 
-    en_path = os.path.join(out_dir, "tinytts-en.json")
-    de_path = os.path.join(out_dir, "tinytts-de.json")
+    en_path = os.path.join(out_dir, "dittli-en.json")
+    de_path = os.path.join(out_dir, "dittli-de.json")
 
     with open(en_path, "w", encoding="utf-8") as f:
         json.dump(en, f, ensure_ascii=False, indent=2)

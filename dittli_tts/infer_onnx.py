@@ -1,5 +1,5 @@
 """
-ONNX Runtime inference engine for TinyTTS.
+ONNX Runtime inference engine for DittliTTS.
 
 Replaces the PyTorch VoiceSynthesizer.infer() with equivalent
 ONNX Runtime sessions + NumPy ops for the non-exported parts
@@ -10,10 +10,10 @@ import os
 import numpy as np
 import soundfile as sf
 
-from tiny_tts.nn import commons
-from tiny_tts.text import phonemes_to_ids
-from tiny_tts.text.english import grapheme_to_phoneme, normalize_text
-from tiny_tts.utils.config import (
+from dittli_tts.nn import commons
+from dittli_tts.text import phonemes_to_ids
+from dittli_tts.text.english import grapheme_to_phoneme, normalize_text
+from dittli_tts.utils.config import (
     ADD_BLANK,
     SAMPLING_RATE,
     SPK2ID,
@@ -74,7 +74,7 @@ def _compute_alignment_path_np(w_ceil, attn_mask):
     return attn * attn_mask
 
 
-class OnnxTinyTTS:
+class OnnxDittliTTS:
     """
     Inference using ONNX Runtime.
 

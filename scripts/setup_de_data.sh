@@ -134,7 +134,7 @@ if [ ! -f "$EN_CKPT" ]; then
     python -c "
 from huggingface_hub import hf_hub_download
 import shutil, os
-p = hf_hub_download(repo_id='backtracking/tiny-tts', filename='G.pth')
+p = hf_hub_download(repo_id='backtracking/dittli-tts', filename='G.pth')
 os.makedirs('$CKPT_DIR', exist_ok=True)
 shutil.copy(p, '$EN_CKPT')
 print('[setup] saved', '$EN_CKPT')
@@ -153,6 +153,6 @@ else
 fi
 
 echo "[setup] done. Next: pre-compute features"
-echo "             python -m tiny_tts.data.preprocess \\"
+echo "             python -m dittli_tts.data.preprocess \\"
 echo "                 --metadata $DATA_DIR/metadata.csv \\"
 echo "                 --wavs-dir $DATA_DIR/wavs"

@@ -1,6 +1,6 @@
 """Remap a phoneme embedding row across a symbol-table change.
 
-The combined `symbols` list in tiny_tts.text.symbols is built as
+The combined `symbols` list in dittli_tts.text.symbols is built as
 `sorted(set(...))`, so adding any new IPA symbol shifts the integer ID of
 every later symbol. When fine-tuning from a checkpoint trained against the
 old symbol list, naive `load_state_dict` either errors on the size mismatch

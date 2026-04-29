@@ -6,11 +6,11 @@ import sys
 import soundfile as sf
 import torch
 
-from tiny_tts.models import VoiceSynthesizer
-from tiny_tts.nn import commons
-from tiny_tts.text import get_g2p, phonemes_to_ids
-from tiny_tts.text.symbols import symbols
-from tiny_tts.utils import (
+from dittli_tts.models import VoiceSynthesizer
+from dittli_tts.nn import commons
+from dittli_tts.text import get_g2p, phonemes_to_ids
+from dittli_tts.text.symbols import symbols
+from dittli_tts.utils import (
     ADD_BLANK,
     MODEL_PARAMS,
     N_SPEAKERS,
@@ -130,7 +130,7 @@ def get_latest_checkpoint(checkpoint_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="TinyTTS — English Text-to-Speech Inference")
+    parser = argparse.ArgumentParser(description="DittliTTS — English Text-to-Speech Inference")
     parser.add_argument("--text", "-t", type=str, default="The weather is nice today, and I feel very relaxed.", help="Text to synthesize")
     parser.add_argument("--checkpoint", "-c", type=str, default=None, help="Path to checkpoint. Auto-downloads if not provided.")
     parser.add_argument("--output", "-o", type=str, default="output.wav", help="Output audio file path")

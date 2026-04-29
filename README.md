@@ -12,7 +12,7 @@
 
 ~1.6M parameters · ~3.4 MB ONNX FP16 · 44.1 kHz · runs on CPU
 
-Dittli TTS extends the original TinyTTS with a German language support, a full adversarial training pipeline, and multi-language browser runtime.
+Dittli TTS extends the original TinyTTS with German language support, a full adversarial training pipeline, and multi-language browser runtime.
 
 ## Languages
 
@@ -26,45 +26,45 @@ Dittli TTS extends the original TinyTTS with a German language support, a full a
 ### Node.js (npm)
 
 ```bash
-npm install tiny-tts
+npm install dittli-tts
 ```
 
 ```javascript
-const TinyTTS = require("tiny-tts");
+const DittliTTS = require("dittli-tts");
 
 // English
-const en = new TinyTTS({ modelPath: "./tinytts-en.onnx" });
+const en = new DittliTTS({ modelPath: "./dittli-en.onnx" });
 await en.speak("Hello world!", "en.wav");
 
 // German — same API, different model + sidecar
-const de = new TinyTTS({ modelPath: "./tinytts-de.onnx" });
+const de = new DittliTTS({ modelPath: "./dittli-de.onnx" });
 await de.speak("Guten Morgen, wie geht es dir?", "de.wav");
 ```
 
 CLI:
 
 ```bash
-node bin/cli.js "Hello world" --model models/tinytts-en.onnx -o out.wav
-node bin/cli.js "Guten Morgen" --model models/tinytts-de.onnx -o out.wav
+node bin/cli.js "Hello world" --model models/dittli-en.onnx -o out.wav
+node bin/cli.js "Guten Morgen" --model models/dittli-de.onnx -o out.wav
 ```
 
 ### Python
 
 ```bash
-pip install tiny-tts
+pip install dittli-tts
 ```
 
 ```python
-from tiny_tts import TinyTTS
+from dittli_tts import DittliTTS
 
-tts = TinyTTS()
+tts = DittliTTS()
 tts.speak("Hello, world!", output_path="hello.wav")
 ```
 
 German inference (requires trained checkpoint):
 
 ```bash
-python -m tiny_tts.infer --lang DE --checkpoint G_de.pth \
+python -m dittli_tts.infer --lang DE --checkpoint G_de.pth \
     --text "Guten Morgen, wie geht es dir?"
 ```
 
@@ -76,7 +76,7 @@ Quick start:
 
 ```bash
 bash scripts/setup_de_data.sh                          # fetch Thorsten dataset
-python -m tiny_tts.data.preprocess \
+python -m dittli_tts.data.preprocess \
     --metadata data/thorsten/metadata.csv \
     --wavs-dir data/thorsten/wavs
 python scripts/finetune_de.py \

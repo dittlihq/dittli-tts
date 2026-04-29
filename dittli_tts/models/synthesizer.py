@@ -6,9 +6,9 @@ from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn import functional as F
 from torch.nn.utils import remove_weight_norm, weight_norm
 
-import tiny_tts.alignment as alignment
-from tiny_tts.nn import attentions, commons, modules
-from tiny_tts.nn.commons import initialize_weights
+import dittli_tts.alignment as alignment
+from dittli_tts.nn import attentions, commons, modules
+from dittli_tts.nn.commons import initialize_weights
 
 
 class AttentionFlowBlock(nn.Module):
@@ -248,9 +248,9 @@ class PhonemeEncoder(nn.Module):
     ):
         super().__init__()
         if num_languages is None:
-            from tiny_tts.text import num_languages
+            from dittli_tts.text import num_languages
         if num_tones is None:
-            from tiny_tts.text import num_tones
+            from dittli_tts.text import num_tones
         self.n_vocab = n_vocab
         self.out_channels = out_channels
         self.hidden_channels = hidden_channels

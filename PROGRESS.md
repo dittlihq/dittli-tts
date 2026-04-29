@@ -11,7 +11,7 @@ and verified end-to-end through the npm-package's Node CLI.
 
 - Trained 100 k steps on Modal A10G (~10.2 h, ~$11.20).
 - `G_de.pth` pulled locally; ONNX FP32 + FP16 written to `models/`.
-- `node npm-package/bin/cli.js "Guten Morgen ..." --model models/tinytts-de.onnx`
+- `node npm-package/bin/cli.js "Guten Morgen ..." --model models/dittli-de.onnx`
   produces intelligible German.
 
 ## Branch
@@ -22,11 +22,11 @@ and verified end-to-end through the npm-package's Node CLI.
 
 ### Code (committed in earlier sessions)
 - [x] **Phase 1** — Symbol table extension + embedding remapper.
-  - `tiny_tts/text/symbols.py`: `de_symbols = ["ʏ", "̩", "yː"]`, `num_de_tones = 1`
-  - `tiny_tts/utils/remap_checkpoint.py`
+  - `dittli_tts/text/symbols.py`: `de_symbols = ["ʏ", "̩", "yː"]`, `num_de_tones = 1`
+  - `dittli_tts/utils/remap_checkpoint.py`
   - 219-symbol English snapshot saved to `checkpoints/symbols_v1_en.txt`.
 - [x] **Phase 2** — Python + JS G2P, parity-tested.
-  - `tiny_tts/text/german.py`, `tiny_tts/text/german_utils/`
+  - `dittli_tts/text/german.py`, `dittli_tts/text/german_utils/`
   - `npm-package/g2p_de.js`, `npm-package/g2p_de_rules.json`
   - 805/805 parity verified by `scripts/test_g2p_parity.py`.
 - [x] **Phase 3** — Training infrastructure.
@@ -44,7 +44,7 @@ and verified end-to-end through the npm-package's Node CLI.
   won't follow command-line symlinks), strips `__MACOSX/`, and concatenates
   the 2022.10 split metadata files into a single `metadata.csv`. Idempotent:
   recovers from half-extracted state without re-downloading.
-- [x] **`tiny_tts/audio.py`**: `torchaudio.load()` requires `torchcodec` in
+- [x] **`dittli_tts/audio.py`**: `torchaudio.load()` requires `torchcodec` in
   torchaudio ≥2.6. Switched to `soundfile.read()` (already in
   `requirements.txt`). Fixed `_mel_basis` to use the `AF` alias instead of
   bare `torchaudio.functional`.
@@ -52,7 +52,7 @@ and verified end-to-end through the npm-package's Node CLI.
   TorchScript tracer; newer torch versions default to dynamo, which can't
   lower this VITS graph cleanly.
 - [x] **Created `modal_train.py`** — Modal entrypoint for fully unattended
-  training. Mounts a persistent volume (`tinytts-de`) for checkpoints,
+  training. Mounts a persistent volume (`dittli-de`) for checkpoints,
   symlinks `data/thorsten` → `/tmp/thorsten` so the ~38 GB spec cache stays
   ephemeral, ships `checkpoints/symbols_v1_en.txt` (originally
   over-aggressive ignore pattern excluded it), and auto-detects highest
@@ -63,23 +63,23 @@ and verified end-to-end through the npm-package's Node CLI.
 - [x] **Full run** (`modal run --detach modal_train.py`): 100 000 steps in
   36 631 s (~10.2 h), ~$11.20. Final losses: `mel=23.9`, `kl=1.7`,
   `dur=1.9`, `d=1.5`, `adv=3.9`, `fm=8.7` — converged, no NaNs.
-- [x] **Export** to `models/tinytts-de.onnx` (FP32, ~6 MB) and
-  `models/tinytts-de_fp16.onnx` (~3 MB) plus `models/tinytts-de.json`
+- [x] **Export** to `models/dittli-de.onnx` (FP32, ~6 MB) and
+  `models/dittli-de_fp16.onnx` (~3 MB) plus `models/dittli-de.json`
   sidecar.
 - [x] **Browser path verified** via `node npm-package/bin/cli.js`.
 
 ## Final artifacts
 - `G_de.pth` — ~6.8 MB checkpoint (local; **not** in the repo, `*.pth` is
-  gitignored). Pulled from Modal volume `tinytts-de` at
+  gitignored). Pulled from Modal volume `dittli-de` at
   `checkpoints_de/G_final.pth`.
-- `models/tinytts-de.onnx` (FP32) and `models/tinytts-de_fp16.onnx` (FP16).
-- `models/tinytts-de.json` (sidecar — committed).
+- `models/dittli-de.onnx` (FP32) and `models/dittli-de_fp16.onnx` (FP16).
+- `models/dittli-de.json` (sidecar — committed).
 
 ## Resume in a fresh codespace
 
 ```bash
-git clone https://github.com/brio1009/tiny-tts.git
-cd tiny-tts
+git clone https://github.com/brio1009/dittli-tts.git
+cd dittli-tts
 git checkout claude/german-implementation-progress-15W8v
 pip install -r requirements.txt soundfile
 ```
@@ -87,14 +87,14 @@ pip install -r requirements.txt soundfile
 Need the trained weights? Either pull from Modal:
 ```bash
 modal token new                                                    # auth
-modal volume get tinytts-de checkpoints_de/G_final.pth ./G_de.pth
+modal volume get dittli-de checkpoints_de/G_final.pth ./G_de.pth
 ```
 …or rerun training from scratch via `modal run --detach modal_train.py`
 (~$11 on A10G).
 
 ## Pre-training validation (cheap, run anytime)
 1. G2P parity — `python scripts/test_g2p_parity.py` (expect 805/805).
-2. Symbol size — `python -c "from tiny_tts.text.symbols import symbols;
+2. Symbol size — `python -c "from dittli_tts.text.symbols import symbols;
    print(len(symbols))"` → 220.
 3. CPU smoke (~30 s if cache exists) — `python scripts/smoke_de.py
    --metadata data/thorsten/metadata.csv --wavs-dir data/thorsten/wavs`.
@@ -103,28 +103,28 @@ modal volume get tinytts-de checkpoints_de/G_final.pth ./G_de.pth
 ```bash
 modal run modal_train.py --max-steps 200          # smoke (~$0.10–0.30)
 modal run --detach modal_train.py                 # full run, walk away
-modal app logs tinytts-de-train                   # live tail
-modal volume ls tinytts-de checkpoints_de/        # inspect checkpoints
-modal volume get tinytts-de checkpoints_de/G_final.pth ./G_de.pth
-modal volume delete tinytts-de                    # cleanup
+modal app logs dittli-de-train                   # live tail
+modal volume ls dittli-de checkpoints_de/        # inspect checkpoints
+modal volume get dittli-de checkpoints_de/G_final.pth ./G_de.pth
+modal volume delete dittli-de                    # cleanup
 ```
 
 ## Notes / Decisions
-- The eager `import torch` in `tiny_tts/__init__.py` makes
-  `import tiny_tts.text.german` pull torch. Build-time scripts
+- The eager `import torch` in `dittli_tts/__init__.py` makes
+  `import dittli_tts.text.german` pull torch. Build-time scripts
   (`scripts/gen_de_rules.py`, `scripts/gen_metadata.py`,
-  `scripts/test_g2p_parity.py`) install a no-op `tiny_tts` shim in
+  `scripts/test_g2p_parity.py`) install a no-op `dittli_tts` shim in
   `sys.modules` so they run without torch.
-- The global `N_SPEAKERS` / `SPK2ID` in `tiny_tts/utils/config.py` were NOT
+- The global `N_SPEAKERS` / `SPK2ID` in `dittli_tts/utils/config.py` were NOT
   modified — that would break English inference. German training reads
-  `N_SPEAKERS_DE` / `SPK2ID_DE` from `tiny_tts/utils/train_config.py`.
+  `N_SPEAKERS_DE` / `SPK2ID_DE` from `dittli_tts/utils/train_config.py`.
 - The German speaker (`THORSTEN`) maps to ID 0, same slot as the existing
   English `MALE`. The speaker embedding row is reused.
 - Loss weights `mel=45, kl=1, dur=1` are the standard VITS recipe.
 - On Modal, `data/thorsten` is symlinked to `/tmp/thorsten` (ephemeral) so
   the ~38 GB spec cache doesn't bloat the persistent volume. The full
   setup → preprocess takes ~13 min per cold start; persisting it would
-  require a second volume (`tinytts-de-data`, discussed but not added).
+  require a second volume (`dittli-de-data`, discussed but not added).
 - The symbol snapshot `checkpoints/symbols_v1_en.txt` MUST be uploaded to
   Modal — without it the embedding remap is skipped and the warm-start is
   much weaker (`loaded 996, skipped 1` vs the correct `loaded 997,
@@ -134,7 +134,7 @@ modal volume delete tinytts-de                    # cleanup
 ## Open / discussed but not done
 - **Persistent Modal data volume** to skip ~13 min cold-start cost on
   reruns. Worth doing only if planning multiple training rounds.
-- **Per-language npm split** (`tiny-tts-en`, `tiny-tts-de`) so users only
+- **Per-language npm split** (`dittli-tts-en`, `dittli-tts-de`) so users only
   download the G2P assets they need (~500 KB savings for German-only apps).
 - **Angular integration pattern** discussed (dynamic `import()` for lazy
   load + `<link rel="prefetch">` on the ONNX). No code in this repo.
@@ -146,24 +146,24 @@ modal volume delete tinytts-de                    # cleanup
 **Modified this session:**
 - `scripts/setup_de_data.sh` — Zenodo URL, format detection, flatten via
   glob, metadata concatenation.
-- `tiny_tts/audio.py` — soundfile-based loader.
+- `dittli_tts/audio.py` — soundfile-based loader.
 - `export_onnx.py` — `dynamo=False`.
 
 **Created this session:**
 - `modal_train.py` — Modal entrypoint with resume-aware checkpoint volume.
 
 **Modified previously:**
-- `tiny_tts/models/synthesizer.py` (+ `forward()`)
-- `tiny_tts/text/__init__.py` (+ `get_g2p()`)
-- `tiny_tts/infer.py` (+ `--lang`)
+- `dittli_tts/models/synthesizer.py` (+ `forward()`)
+- `dittli_tts/text/__init__.py` (+ `get_g2p()`)
+- `dittli_tts/infer.py` (+ `--lang`)
 - `npm-package/index.js` (metadata-driven)
 - `npm-package/index.d.ts`, `npm-package/package.json`, `npm-package/bin/cli.js`
-- `tiny_tts/text/symbols.py`
+- `dittli_tts/text/symbols.py`
 
 **Created previously:**
-- `tiny_tts/losses.py`, `tiny_tts/train.py`, `tiny_tts/data/{__init__,dataset,preprocess}.py`,
-  `tiny_tts/models/discriminator.py`, `tiny_tts/utils/{train_config,remap_checkpoint}.py`
+- `dittli_tts/losses.py`, `dittli_tts/train.py`, `dittli_tts/data/{__init__,dataset,preprocess}.py`,
+  `dittli_tts/models/discriminator.py`, `dittli_tts/utils/{train_config,remap_checkpoint}.py`
 - `scripts/{finetune_de,smoke_de,gen_de_rules,gen_metadata,test_g2p_parity,_run_js_g2p}.py`,
   `scripts/de_test_words.txt`
 - `npm-package/{g2p_en,g2p_de}.js`, `npm-package/g2p_de_rules.json`
-- `models/tinytts-en.json`, `models/tinytts-de.json`
+- `models/dittli-en.json`, `models/dittli-de.json`

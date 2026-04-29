@@ -9,9 +9,9 @@ Run training:
     modal run modal_train.py --max-steps 200           # quick smoke
 
 Reconnect / inspect a detached run:
-    modal app logs tinytts-de-train
-    modal volume ls tinytts-de
-    modal volume get tinytts-de checkpoints_de/G_<step>.pth ./G_de.pth
+    modal app logs dittli-de-train
+    modal volume ls dittli-de
+    modal volume get dittli-de checkpoints_de/G_<step>.pth ./G_de.pth
 
 Resume after a previous run was killed (timeout, OOM, manual stop):
     Just re-run the same `modal run` command. The volume keeps prior
@@ -29,8 +29,8 @@ import modal
 
 GPU_KIND = "A10G"            # cheaper: "T4". Faster: "A100-40GB" or "L4".
 TIMEOUT_HOURS = 12
-APP_NAME = "tinytts-de-train"
-VOLUME_NAME = "tinytts-de"
+APP_NAME = "dittli-de-train"
+VOLUME_NAME = "dittli-de"
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -38,7 +38,7 @@ image = (
     .pip_install_from_requirements("requirements.txt")
     .add_local_dir(
         ".",
-        remote_path="/root/tiny-tts",
+        remote_path="/root/dittli-tts",
         ignore=[
             "data/**", "checkpoints/*.pth", "checkpoints_de/**",
             "venv/**", ".venv/**", ".git/**", "__pycache__/**",
@@ -64,7 +64,7 @@ def train(max_steps: int | None = None, batch_size: int = 8) -> None:
     import subprocess
     import sys
 
-    os.chdir("/root/tiny-tts")
+    os.chdir("/root/dittli-tts")
 
     # Big-but-ephemeral data goes to /tmp; only checkpoints sit on the
     # persistent volume. We symlink so the existing scripts don't need
@@ -98,7 +98,7 @@ def train(max_steps: int | None = None, batch_size: int = 8) -> None:
 
     print("[modal] running preprocess (~10 min) ...")
     subprocess.run([
-        sys.executable, "-m", "tiny_tts.data.preprocess",
+        sys.executable, "-m", "dittli_tts.data.preprocess",
         "--metadata", "data/thorsten/metadata.csv",
         "--wavs-dir", "data/thorsten/wavs",
     ], check=True)
