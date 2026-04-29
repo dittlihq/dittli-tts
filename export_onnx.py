@@ -16,9 +16,11 @@ sys.path.insert(0, REPO_ROOT)
 
 from tiny_tts.infer import load_engine
 from tiny_tts.text.symbols import (
-    symbols as new_symbols,
     language_id_map,
     language_tone_start_map,
+)
+from tiny_tts.text.symbols import (
+    symbols as new_symbols,
 )
 from tiny_tts.utils.config import SAMPLING_RATE
 
@@ -157,6 +159,7 @@ def main():
     try:
         from onnxruntime.quantization.shape_inference import quant_pre_process
         from onnxruntime.transformers.float16 import convert_float_to_float16
+
         from onnx import load_model, save_model
 
         print("Converting to FP16 ...")

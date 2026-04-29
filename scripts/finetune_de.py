@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-import tempfile
 
 import torch
 
@@ -30,18 +29,18 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from tiny_tts.text.symbols import symbols as new_symbols
+from tiny_tts.train import Trainer, TrainerConfig
 from tiny_tts.utils.remap_checkpoint import (
     load_old_symbols,
     remap_state_dict,
 )
-from tiny_tts.train import Trainer, TrainerConfig
 from tiny_tts.utils.train_config import (
     BATCH_SIZE,
     LEARNING_RATE,
-    SAVE_INTERVAL,
     LOG_INTERVAL,
-    TOTAL_STEPS,
     N_SPEAKERS_DE,
+    SAVE_INTERVAL,
+    TOTAL_STEPS,
 )
 
 

@@ -9,7 +9,6 @@ Usage:
 """
 from __future__ import annotations
 
-import importlib.util
 import json
 import os
 import sys
@@ -29,10 +28,12 @@ def _install_pkg_shim(name: str, dir_path: str) -> None:
 
 _install_pkg_shim("tiny_tts", os.path.join(ROOT, "tiny_tts"))
 
-from tiny_tts.text.symbols import (  # noqa: E402
-    symbols as new_symbols,
+from tiny_tts.text.symbols import (
     language_id_map,
     language_tone_start_map,
+)
+from tiny_tts.text.symbols import (  # noqa: E402
+    symbols as new_symbols,
 )
 from tiny_tts.utils.config import SAMPLING_RATE  # noqa: E402
 

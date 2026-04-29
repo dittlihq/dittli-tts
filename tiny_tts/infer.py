@@ -1,16 +1,23 @@
-import os
-import sys
-import re
-import torch
-import soundfile as sf
 import argparse
-from tiny_tts.text import phonemes_to_ids, get_g2p
-from tiny_tts.nn import commons
+import os
+import re
+import sys
+
+import soundfile as sf
+import torch
+
 from tiny_tts.models import VoiceSynthesizer
+from tiny_tts.nn import commons
+from tiny_tts.text import get_g2p, phonemes_to_ids
 from tiny_tts.text.symbols import symbols
 from tiny_tts.utils import (
-    SAMPLING_RATE, SEGMENT_FRAMES, ADD_BLANK, SPEC_CHANNELS,
-    N_SPEAKERS, SPK2ID, MODEL_PARAMS,
+    ADD_BLANK,
+    MODEL_PARAMS,
+    N_SPEAKERS,
+    SAMPLING_RATE,
+    SEGMENT_FRAMES,
+    SPEC_CHANNELS,
+    SPK2ID,
 )
 
 

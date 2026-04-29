@@ -1,16 +1,20 @@
 import os
-import torch
+
 import soundfile as sf
-from tiny_tts.text.english import normalize_text, grapheme_to_phoneme
-from tiny_tts.text import phonemes_to_ids
-from tiny_tts.nn import commons
-from tiny_tts.models.synthesizer import VoiceSynthesizer
-from tiny_tts.text.symbols import symbols
-from tiny_tts.utils.config import (
-    SAMPLING_RATE, SEGMENT_FRAMES, ADD_BLANK, SPEC_CHANNELS,
-    N_SPEAKERS, SPK2ID, MODEL_PARAMS,
-)
+import torch
+
 from tiny_tts.infer import load_engine
+from tiny_tts.models.synthesizer import VoiceSynthesizer as VoiceSynthesizer
+from tiny_tts.nn import commons
+from tiny_tts.text import phonemes_to_ids
+from tiny_tts.text.english import grapheme_to_phoneme, normalize_text
+from tiny_tts.text.symbols import symbols as symbols
+from tiny_tts.utils.config import (
+    ADD_BLANK,
+    SAMPLING_RATE,
+    SPK2ID,
+)
+
 
 class TinyTTS:
     def __init__(self, checkpoint_path=None, device=None):
@@ -30,7 +34,9 @@ class TinyTTS:
                     print("Downloading/Loading checkpoint from Hugging Face Hub (backtracking/tiny-tts)...")
                     default_ckpt = hf_hub_download(repo_id="backtracking/tiny-tts", filename="G.pth")
                 except ImportError:
-                    raise ImportError("huggingface_hub is required to auto-download the model. Run: pip install huggingface_hub")
+                    raise ImportError(
+                        "huggingface_hub is required to auto-download the model. Run: pip install huggingface_hub"
+                    )
                 except Exception as e:
                     raise ValueError(f"Failed to download checkpoint from Hugging Face: {e}")
 

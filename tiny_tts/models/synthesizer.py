@@ -1,17 +1,14 @@
 import math
+
 import torch
 from torch import nn
-from torch.nn import functional as F
-
-from tiny_tts.nn import commons
-from tiny_tts.nn import modules
-from tiny_tts.nn import attentions
-
 from torch.nn import Conv1d, ConvTranspose1d
-from torch.nn.utils import weight_norm, remove_weight_norm
+from torch.nn import functional as F
+from torch.nn.utils import remove_weight_norm, weight_norm
 
-from tiny_tts.nn.commons import initialize_weights, compute_padding
 import tiny_tts.alignment as alignment
+from tiny_tts.nn import attentions, commons, modules
+from tiny_tts.nn.commons import initialize_weights
 
 
 class AttentionFlowBlock(nn.Module):
@@ -406,7 +403,7 @@ class WaveformDecoder(torch.nn.Module):
         upsample_kernel_sizes,
         gin_channels=0,
     ):
-        super(WaveformDecoder, self).__init__()
+        super().__init__()
         self.num_kernels = len(resblock_kernel_sizes)
         self.num_upsamples = len(upsample_rates)
         self.conv_pre = Conv1d(

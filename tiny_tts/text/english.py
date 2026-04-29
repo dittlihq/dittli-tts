@@ -1,13 +1,13 @@
-import pickle
 import os
+import pickle
 import re
+
 from g2p_en import G2p
 
 from . import symbols
-
 from .english_utils.abbreviations import expand_abbreviations
-from .english_utils.time_norm import expand_time_english
 from .english_utils.number_norm import normalize_numbers
+from .english_utils.time_norm import expand_time_english
 
 
 def distribute_phone(n_phone, n_word):

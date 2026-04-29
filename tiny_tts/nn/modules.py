@@ -1,15 +1,15 @@
 import math
+
 import torch
 from torch import nn
-from torch.nn import functional as F
-
 from torch.nn import Conv1d
-from torch.nn.utils import weight_norm, remove_weight_norm
+from torch.nn import functional as F
+from torch.nn.utils import remove_weight_norm, weight_norm
 
 from . import commons
-from .commons import initialize_weights, compute_padding
-from .transforms import spline_transform
 from .attentions import TransformerBlock
+from .commons import compute_padding, initialize_weights
+from .transforms import spline_transform
 
 LRELU_SLOPE = 0.1
 
@@ -138,7 +138,7 @@ class WaveNet(torch.nn.Module):
         gin_channels=0,
         p_dropout=0,
     ):
-        super(WaveNet, self).__init__()
+        super().__init__()
         assert kernel_size % 2 == 1
         self.hidden_channels = hidden_channels
         self.kernel_size = (kernel_size,)
@@ -217,7 +217,7 @@ class WaveNet(torch.nn.Module):
 
 class ConvResBlock(torch.nn.Module):
     def __init__(self, channels, kernel_size=3, dilation=(1, 3, 5)):
-        super(ConvResBlock, self).__init__()
+        super().__init__()
         self.convs1 = nn.ModuleList(
             [
                 weight_norm(
@@ -314,7 +314,7 @@ class ConvResBlock(torch.nn.Module):
 
 class ConvResBlockLight(torch.nn.Module):
     def __init__(self, channels, kernel_size=3, dilation=(1, 3)):
-        super(ConvResBlockLight, self).__init__()
+        super().__init__()
         self.convs = nn.ModuleList(
             [
                 weight_norm(

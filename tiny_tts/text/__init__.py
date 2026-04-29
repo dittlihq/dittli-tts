@@ -1,6 +1,5 @@
 from .symbols import *
 
-
 _symbol_to_id = {s: i for i, s in enumerate(symbols)}
 
 
@@ -23,9 +22,9 @@ def get_g2p(language: str):
     """Return the (normalize_text, grapheme_to_phoneme) pair for a language code."""
     lang = language.upper()
     if lang == "EN":
-        from .english import normalize_text, grapheme_to_phoneme
+        from .english import grapheme_to_phoneme, normalize_text
         return normalize_text, grapheme_to_phoneme
     if lang == "DE":
-        from .german import normalize_text, grapheme_to_phoneme
+        from .german import grapheme_to_phoneme, normalize_text
         return normalize_text, grapheme_to_phoneme
     raise ValueError(f"No G2P registered for language {language!r}.")

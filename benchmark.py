@@ -2,7 +2,12 @@
 Fair benchmark: TinyTTS vs Piper vs Kokoro ONNX vs KittenTTS nano/mini vs Pocket-TTS vs Supertonic
 All CPU-only, same sentence, same warmup+timing protocol.
 """
-import os, sys, time, tempfile, wave
+import os
+import sys
+import tempfile
+import time
+import wave
+
 import numpy as np
 import soundfile as sf
 
@@ -43,7 +48,7 @@ def bench(name, fn_warmup, fn_run, get_audio_path):
 # ── 1. TinyTTS (PyTorch) ──────────────────────────────────────────────────────
 print("\n[1] TinyTTS (PyTorch)...")
 from tiny_tts.infer import load_engine, synthesize
-from tiny_tts.utils.config import SAMPLING_RATE as TINY_SR
+
 tiny_model = load_engine("G_150000.pth", device="cpu")
 results["TinyTTS (PyTorch)"] = bench(
     "TinyTTS",
@@ -57,10 +62,11 @@ results["TinyTTS (PyTorch)"] = bench(
 print("\n[1b] TinyTTS (ONNX)...")
 try:
     import onnxruntime as ort
-    from tiny_tts.utils.config import SPK2ID, ADD_BLANK
-    from tiny_tts.text.english import normalize_text, grapheme_to_phoneme
-    from tiny_tts.text import phonemes_to_ids
+
     from tiny_tts.nn import commons
+    from tiny_tts.text import phonemes_to_ids
+    from tiny_tts.text.english import grapheme_to_phoneme, normalize_text
+    from tiny_tts.utils.config import ADD_BLANK, SPK2ID
     
     onnx_sess = ort.InferenceSession("tinytts.onnx", providers=["CPUExecutionProvider"])
     
@@ -170,8 +176,8 @@ except Exception as e:
 # ── 6. Pocket-TTS ─────────────────────────────────────────────────────────────
 print("\n[6] Pocket-TTS...")
 try:
-    from pocket_tts import TTSModel
     import scipy.io.wavfile as wavfile
+    from pocket_tts import TTSModel
     pocket = TTSModel.load_model()
     voice_state = pocket.get_state_for_audio_prompt("alba")
     def run_pocket(tag):
@@ -187,10 +193,11 @@ except Exception as e:
 # ── 7. Supertonic ONNX ────────────────────────────────────────────────────────
 print("\n[7] Supertonic ONNX (5 flow steps)...")
 try:
-    import onnxruntime as ort
     import json
-    from unicodedata import normalize as unicode_normalize
     import re as _re
+    from unicodedata import normalize as unicode_normalize
+
+    import onnxruntime as ort
 
     SUPER_DIR = r"models\supertonic"
 

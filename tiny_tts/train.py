@@ -9,18 +9,15 @@ from __future__ import annotations
 import os
 import time
 from dataclasses import dataclass
-from typing import Optional
 
 import torch
-from torch import nn
-from torch.utils.data import DataLoader
 from torch.optim import AdamW
+from torch.utils.data import DataLoader
 
 from tiny_tts.audio import (
-    MelSpectrogram,
-    spec_to_mel_torch,
-    mel_spectrogram_torch,
     commons_extract,
+    mel_spectrogram_torch,
+    spec_to_mel_torch,
 )
 from tiny_tts.data.dataset import ThorstenDataset, collate
 from tiny_tts.losses import (
@@ -35,29 +32,29 @@ from tiny_tts.models.synthesizer import VoiceSynthesizer
 from tiny_tts.nn import commons
 from tiny_tts.text.symbols import symbols
 from tiny_tts.utils.config import (
-    SAMPLING_RATE,
     FILTER_LENGTH,
     HOP_LENGTH,
-    SPEC_CHANNELS,
     MODEL_PARAMS,
+    SAMPLING_RATE,
+    SPEC_CHANNELS,
 )
 from tiny_tts.utils.train_config import (
-    LEARNING_RATE,
-    BETAS,
-    EPS,
-    LR_DECAY,
-    GRAD_CLIP,
-    LOG_INTERVAL,
-    SAVE_INTERVAL,
     BATCH_SIZE,
-    SEGMENT_SIZE,
-    C_MEL,
-    C_KL,
+    BETAS,
     C_DUR,
-    N_MELS,
-    F_MIN,
+    C_KL,
+    C_MEL,
+    EPS,
     F_MAX,
+    F_MIN,
+    GRAD_CLIP,
+    LEARNING_RATE,
+    LOG_INTERVAL,
+    LR_DECAY,
+    N_MELS,
     NUM_WORKERS,
+    SAVE_INTERVAL,
+    SEGMENT_SIZE,
 )
 
 
@@ -66,8 +63,8 @@ class TrainerConfig:
     metadata_path: str
     wavs_dir: str
     ckpt_dir: str
-    init_g_ckpt: Optional[str] = None      # English G.pth to fine-tune from
-    init_d_ckpt: Optional[str] = None
+    init_g_ckpt: str | None = None      # English G.pth to fine-tune from
+    init_d_ckpt: str | None = None
     n_speakers: int = 1
     total_steps: int = 100_000
     batch_size: int = BATCH_SIZE

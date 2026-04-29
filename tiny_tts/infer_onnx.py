@@ -6,14 +6,17 @@ ONNX Runtime sessions + NumPy ops for the non-exported parts
 (alignment path computation).
 """
 import os
+
 import numpy as np
 import soundfile as sf
 
-from tiny_tts.text.english import normalize_text, grapheme_to_phoneme
-from tiny_tts.text import phonemes_to_ids
 from tiny_tts.nn import commons
+from tiny_tts.text import phonemes_to_ids
+from tiny_tts.text.english import grapheme_to_phoneme, normalize_text
 from tiny_tts.utils.config import (
-    SAMPLING_RATE, ADD_BLANK, SPK2ID,
+    ADD_BLANK,
+    SAMPLING_RATE,
+    SPK2ID,
 )
 
 try:
@@ -185,8 +188,8 @@ class OnnxTinyTTS:
         save_sr = SAMPLING_RATE
         if output_sr is not None and output_sr != SAMPLING_RATE:
             try:
-                import torchaudio
                 import torch
+                import torchaudio
                 wav_t = torch.from_numpy(audio_np).unsqueeze(0)
                 resampler = torchaudio.transforms.Resample(SAMPLING_RATE, output_sr)
                 audio_np = resampler(wav_t).squeeze(0).numpy()

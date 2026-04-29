@@ -3,12 +3,12 @@ Benchmark: PyTorch CPU  vs  ONNX Runtime CPU
 Runs N_WARMUP warm-up then N_RUNS timed iterations.
 Prints RTF (Real-Time Factor) comparison table.
 """
-import time
 import argparse
-import tempfile
 import os
+import tempfile
+import time
+
 import numpy as np
-import torch
 import soundfile as sf
 
 TEXT = "The weather is nice today, and I feel very relaxed."
@@ -77,7 +77,7 @@ def main():
     args = parser.parse_args()
 
     print(f"\n{'='*65}")
-    print(f"  TinyTTS Inference Benchmark")
+    print("  TinyTTS Inference Benchmark")
     print(f"  Text : {TEXT}")
     print(f"  Runs : {N_WARMUP} warm-up + {N_RUNS} timed")
     print(f"{'='*65}\n")
@@ -90,7 +90,6 @@ def main():
     from tiny_tts.infer import load_engine, synthesize
     model = load_engine(args.checkpoint, device=args.device)
     synthesize(TEXT, _TMP_WAV, model, speaker="female", device=args.device)
-    import soundfile as sf
     audio_data, _ = sf.read(_TMP_WAV)
     audio_secs = len(audio_data) / sr
     print(f"  Audio duration: {audio_secs:.3f}s at {sr}Hz")

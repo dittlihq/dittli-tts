@@ -1,5 +1,6 @@
 import gradio as gr
 import nltk
+
 from tiny_tts import TinyTTS
 
 # Download required NLTK data for g2p-en

@@ -14,11 +14,9 @@ Output phonemes use IPA tokens that already exist in tiny_tts.text.symbols
 """
 from __future__ import annotations
 
-from . import symbols as _symbols_module
-from .symbols import symbols as _SYMBOLS
 from .german_utils.abbreviations import expand_abbreviations
 from .german_utils.number_norm import normalize_numbers
-
+from .symbols import symbols as _SYMBOLS
 
 # Common loanwords whose pronunciation deviates from German rules.
 EXCEPTION_DICT: dict[str, list[str]] = {

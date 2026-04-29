@@ -40,10 +40,26 @@ include = ["tiny_tts*"]
 
 [tool.ruff]
 target-version = "py38"
-line-length = 100
+line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"benchmark.py" = ["E402", "E501", "E702", "I001"]
+"benchmark_onnx.py" = ["E402", "E501"]
+"app.py" = ["E402", "E501"]
+"export_onnx.py" = ["E402"]
+"modal_train.py" = ["E402"]
+"scripts/*.py" = ["E402"]
+"tiny_tts/text/__init__.py" = ["F403", "F405"]
+"tiny_tts/utils/__init__.py" = ["I001"]
+"tiny_tts/text/english.py" = ["E402"]
+"tiny_tts/text/symbols.py" = ["E501"]
+"tiny_tts/infer.py" = ["E501"]
+"tiny_tts/losses.py" = ["E741"]
+"tiny_tts/nn/modules.py" = ["E741"]
+"tiny_tts/nn/transforms.py" = ["E741"]
 
 [tool.ruff.format]
 quote-style = "double"

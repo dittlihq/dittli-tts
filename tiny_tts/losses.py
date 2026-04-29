@@ -2,8 +2,6 @@
 import torch
 from torch.nn import functional as F
 
-from tiny_tts.nn import commons
-
 
 def kl_loss(z_p, logs_q, m_p, logs_p, z_mask):
     """KL[q(z|y) || p(z|x)] with the prior expanded to spec frames.

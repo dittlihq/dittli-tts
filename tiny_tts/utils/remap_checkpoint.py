@@ -13,9 +13,9 @@ to genuinely new symbols.
 """
 
 from typing import Sequence
+
 import torch
 from torch import nn
-
 
 PHONEME_EMB_KEY = "enc_p.emb.weight"
 

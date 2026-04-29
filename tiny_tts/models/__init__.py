@@ -1,1 +1,1 @@
-from .synthesizer import VoiceSynthesizer
+from .synthesizer import VoiceSynthesizer as VoiceSynthesizer
