@@ -122,6 +122,7 @@ def main():
         args.out,
         export_params=True,
         opset_version=14,
+        dynamo=False,
         do_constant_folding=True,
         input_names=[
             "x", "x_lengths", "sid", "tone", "language", "bert", "ja_bert",

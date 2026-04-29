@@ -225,7 +225,7 @@
     "SP",
     "UNK"
   ],
-  "phoneme_set": "german_v1",
+  "phoneme_set": "de_v1",
   "n_speakers": 1,
   "spk2id": {
     "THORSTEN": 0
