@@ -13,7 +13,7 @@ declare class TinyTTS {
   constructor(options?: {
     modelPath?: string;
     metadataPath?: string;
-    device?: 'cpu' | 'gpu';
+    device?: "cpu" | "gpu";
   });
 
   metadata: ModelMetadata | null;
@@ -26,11 +26,14 @@ declare class TinyTTS {
     langIds: number[];
   };
 
-  speak(text: string, options?: {
-    output?: string;
-    speaker?: string;
-    speed?: number;
-  }): Promise<Buffer>;
+  speak(
+    text: string,
+    options?: {
+      output?: string;
+      speaker?: string;
+      speed?: number;
+    },
+  ): Promise<Buffer>;
 
   speak(text: string, outputPath?: string): Promise<Buffer>;
 

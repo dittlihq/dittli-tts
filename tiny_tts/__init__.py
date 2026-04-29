@@ -20,7 +20,7 @@ class TinyTTS:
             self.device = device
             
         if checkpoint_path is None:
-            # Look for default checkpoint in pacakage
+            # Look for default checkpoint in package
             pkg_dir = os.path.dirname(os.path.abspath(__file__))
             default_ckpt = os.path.join(os.path.dirname(pkg_dir), "checkpoints", "G.pth")
             # 2. Check HuggingFace Cache / Download

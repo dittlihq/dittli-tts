@@ -3,9 +3,9 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tiny-tts"
+name = "dittli-tts"
 version = "0.1.0"
-description = "Ultra-lightweight English text-to-speech model (~9M params, ~20MB)"
+description = "Lightweight browser-first TTS with English and German support (~1.6M params)"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.8"
@@ -27,8 +27,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "black",
-    "flake8",
+    "ruff",
+    "ty",
 ]
 
 [project.scripts]
@@ -37,3 +37,15 @@ tiny-tts = "tiny_tts.infer:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["tiny_tts*"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ty]

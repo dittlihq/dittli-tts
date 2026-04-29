@@ -6,38 +6,38 @@
  * and regenerate.
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("node:fs");
+const path = require("node:path");
 
-const _RULES_PATH = path.join(__dirname, 'g2p_de_rules.json');
-const _RULES_DATA = JSON.parse(fs.readFileSync(_RULES_PATH, 'utf-8'));
+const _RULES_PATH = path.join(__dirname, "g2p_de_rules.json");
+const _RULES_DATA = JSON.parse(fs.readFileSync(_RULES_PATH, "utf-8"));
 
-const EXCEPTIONS = _RULES_DATA.exceptions;            // { lower: [phones...] }
-const RULES = _RULES_DATA.rules;                      // [[pattern, action], ...]
+const EXCEPTIONS = _RULES_DATA.exceptions; // { lower: [phones...] }
+const RULES = _RULES_DATA.rules; // [[pattern, action], ...]
 const PREFIXES = _RULES_DATA.prefixes;
 const LOANWORD_V_FRAGMENTS = _RULES_DATA.loanword_v_fragments;
-const ABBREVIATIONS = _RULES_DATA.abbreviations;      // [[pattern, expansion], ...]
+const ABBREVIATIONS = _RULES_DATA.abbreviations; // [[pattern, expansion], ...]
 const BACK_VOWELS = _RULES_DATA.back_vowels;
 const ALL_VOWELS = _RULES_DATA.all_vowels;
-const WORD_CHARS = new Set(_RULES_DATA.word_chars.split(''));
+const WORD_CHARS = new Set(_RULES_DATA.word_chars.split(""));
 
 // ---------------------------------------------------------------------------
 // Context-sensitive callbacks. Must match german.py exactly.
 // ---------------------------------------------------------------------------
 
 function chRule(word, i) {
-  if (i === 0) return ['k'];
-  if (i >= 2 && word.slice(i - 2, i) === 'au') return ['x'];
+  if (i === 0) return ["k"];
+  if (i >= 2 && word.slice(i - 2, i) === "au") return ["x"];
   const prev = word[i - 1];
-  if (BACK_VOWELS.includes(prev)) return ['x'];
-  return ['ç'];
+  if (BACK_VOWELS.includes(prev)) return ["x"];
+  return ["ç"];
 }
 
 function chsRule(word, i) {
-  if (i + 3 === word.length || (i + 3 < word.length && word[i + 3] === 't')) {
-    return ['k', 's'];
+  if (i + 3 === word.length || (i + 3 < word.length && word[i + 3] === "t")) {
+    return ["k", "s"];
   }
-  return chRule(word, i).concat(['s']);
+  return chRule(word, i).concat(["s"]);
 }
 
 function _stOrSp(word, i, voicedHead) {
@@ -49,48 +49,49 @@ function _stOrSp(word, i, voicedHead) {
 }
 
 function stRule(word, i) {
-  if (i === 0) return ['ʃ', 't'];
+  if (i === 0) return ["ʃ", "t"];
   for (const p of PREFIXES) {
-    if (word.startsWith(p) && i === p.length) return ['ʃ', 't'];
+    if (word.startsWith(p) && i === p.length) return ["ʃ", "t"];
   }
-  return ['s', 't'];
+  return ["s", "t"];
 }
 
 function spRule(word, i) {
-  if (i === 0) return ['ʃ', 'p'];
+  if (i === 0) return ["ʃ", "p"];
   for (const p of PREFIXES) {
-    if (word.startsWith(p) && i === p.length) return ['ʃ', 'p'];
+    if (word.startsWith(p) && i === p.length) return ["ʃ", "p"];
   }
-  return ['s', 'p'];
+  return ["s", "p"];
 }
 
 function rRule(word, i) {
   if (i === word.length - 1 && i > 0 && ALL_VOWELS.includes(word[i - 1])) {
-    return ['ɐ'];
+    return ["ɐ"];
   }
-  if (word.endsWith('er') && i === word.length - 1) return ['ɐ'];
-  return ['ʁ'];
+  if (word.endsWith("er") && i === word.length - 1) return ["ɐ"];
+  return ["ʁ"];
 }
 
 function sRule(word, i) {
   if (i === 0 && i + 1 < word.length && ALL_VOWELS.includes(word[i + 1])) {
-    return ['z'];
+    return ["z"];
   }
   if (
-    i > 0 && i < word.length - 1 &&
+    i > 0 &&
+    i < word.length - 1 &&
     ALL_VOWELS.includes(word[i - 1]) &&
     ALL_VOWELS.includes(word[i + 1])
   ) {
-    return ['z'];
+    return ["z"];
   }
-  return ['s'];
+  return ["s"];
 }
 
 function vRule(word, _i) {
   for (const frag of LOANWORD_V_FRAGMENTS) {
-    if (word.includes(frag)) return ['v'];
+    if (word.includes(frag)) return ["v"];
   }
-  return ['f'];
+  return ["f"];
 }
 
 const CALLBACKS = {
@@ -107,17 +108,28 @@ const CALLBACKS = {
 // Number normalization (port of tiny_tts/text/german_utils/number_norm.py).
 // ---------------------------------------------------------------------------
 
-const _ONES = [
-  'null', 'eins', 'zwei', 'drei', 'vier',
-  'fünf', 'sechs', 'sieben', 'acht', 'neun',
-];
+const _ONES = ["null", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun"];
 const _TEENS = {
-  10: 'zehn', 11: 'elf', 12: 'zwölf', 13: 'dreizehn', 14: 'vierzehn',
-  15: 'fünfzehn', 16: 'sechzehn', 17: 'siebzehn', 18: 'achtzehn', 19: 'neunzehn',
+  10: "zehn",
+  11: "elf",
+  12: "zwölf",
+  13: "dreizehn",
+  14: "vierzehn",
+  15: "fünfzehn",
+  16: "sechzehn",
+  17: "siebzehn",
+  18: "achtzehn",
+  19: "neunzehn",
 };
 const _TENS = {
-  20: 'zwanzig', 30: 'dreißig', 40: 'vierzig', 50: 'fünfzig',
-  60: 'sechzig', 70: 'siebzig', 80: 'achtzig', 90: 'neunzig',
+  20: "zwanzig",
+  30: "dreißig",
+  40: "vierzig",
+  50: "fünfzig",
+  60: "sechzig",
+  70: "siebzig",
+  80: "achtzig",
+  90: "neunzig",
 };
 
 function _underHundred(n) {
@@ -126,7 +138,7 @@ function _underHundred(n) {
   const tens = Math.floor(n / 10) * 10;
   const ones = n % 10;
   if (ones === 0) return _TENS[tens];
-  const onesWord = ones === 1 ? 'ein' : _ONES[ones];
+  const onesWord = ones === 1 ? "ein" : _ONES[ones];
   return `${onesWord}und${_TENS[tens]}`;
 }
 
@@ -134,7 +146,7 @@ function _underThousand(n) {
   if (n < 100) return _underHundred(n);
   const hundreds = Math.floor(n / 100);
   const rest = n % 100;
-  const head = hundreds === 1 ? 'ein' : _ONES[hundreds];
+  const head = hundreds === 1 ? "ein" : _ONES[hundreds];
   return rest === 0 ? `${head}hundert` : `${head}hundert${_underHundred(rest)}`;
 }
 
@@ -142,7 +154,7 @@ function _underMillion(n) {
   if (n < 1000) return _underThousand(n);
   const thousands = Math.floor(n / 1000);
   const rest = n % 1000;
-  const head = thousands === 1 ? 'ein' : _underThousand(thousands);
+  const head = thousands === 1 ? "ein" : _underThousand(thousands);
   return rest === 0 ? `${head}tausend` : `${head}tausend${_underThousand(rest)}`;
 }
 
@@ -152,12 +164,12 @@ function numberToWords(n) {
   if (n < 1_000_000_000) {
     const millions = Math.floor(n / 1_000_000);
     const rest = n % 1_000_000;
-    const m = millions === 1 ? 'eine Million' : `${_underMillion(millions)} Millionen`;
+    const m = millions === 1 ? "eine Million" : `${_underMillion(millions)} Millionen`;
     return rest === 0 ? m : `${m} ${_underMillion(rest)}`;
   }
   const billions = Math.floor(n / 1_000_000_000);
   const rest = n % 1_000_000_000;
-  const b = billions === 1 ? 'eine Milliarde' : `${_underMillion(billions)} Milliarden`;
+  const b = billions === 1 ? "eine Milliarde" : `${_underMillion(billions)} Milliarden`;
   return rest === 0 ? b : `${b} ${_underMillion(rest)}`;
 }
 
@@ -171,7 +183,7 @@ function normalizeNumbers(text) {
 
 function expandAbbreviations(text) {
   for (const [pattern, expansion] of ABBREVIATIONS) {
-    text = text.replace(new RegExp(pattern, 'g'), expansion);
+    text = text.replace(new RegExp(pattern, "g"), expansion);
   }
   return text;
 }
@@ -194,7 +206,7 @@ function _applyRules(word) {
     for (const [pattern, action] of RULES) {
       const plen = pattern.length;
       if (i + plen <= n && word.slice(i, i + plen) === pattern) {
-        if (typeof action === 'object' && !Array.isArray(action) && action.callback) {
+        if (typeof action === "object" && !Array.isArray(action) && action.callback) {
           out.push(...CALLBACKS[action.callback](word, i));
         } else {
           out.push(...action);
@@ -218,9 +230,9 @@ function _applyRules(word) {
 // ---------------------------------------------------------------------------
 
 function _mapPhoneme(ph, symbolSet) {
-  const rep = { '\n': '.', '...': '…', 'v': 'V' };
+  const rep = { "\n": ".", "...": "…", v: "V" };
   if (rep[ph] !== undefined) ph = rep[ph];
-  if (symbolSet && !symbolSet.has(ph)) return 'UNK';
+  if (symbolSet && !symbolSet.has(ph)) return "UNK";
   return ph;
 }
 
@@ -275,9 +287,12 @@ function graphemeToPhonemeDE(text, opts = {}) {
   }
 
   if (padStartEnd) {
-    phones.unshift('_'); phones.push('_');
-    tones.unshift(0); tones.push(0);
-    word2ph.unshift(1); word2ph.push(1);
+    phones.unshift("_");
+    phones.push("_");
+    tones.unshift(0);
+    tones.push(0);
+    word2ph.unshift(1);
+    word2ph.push(1);
   }
   return { phones, tones, word2ph };
 }

@@ -15,8 +15,19 @@
     "g2p_model.json",
     "bin/cli.js"
   ],
-  "bin": { "tiny-tts": "bin/cli.js" },
-  "keywords": ["tts","text-to-speech","speech-synthesis","onnx","lightweight","node-tts","edge-tts","offline-tts"],
+  "bin": {
+    "tiny-tts": "bin/cli.js"
+  },
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "speech-synthesis",
+    "onnx",
+    "lightweight",
+    "node-tts",
+    "edge-tts",
+    "offline-tts"
+  ],
   "author": "TinyTTS Contributors",
   "license": "Apache-2.0",
   "repository": {
@@ -24,12 +35,21 @@
     "url": "git+https://github.com/tronghieuit/tiny-tts.git",
     "directory": "npm-package"
   },
-  "bugs": { "url": "https://github.com/tronghieuit/tiny-tts/issues" },
+  "bugs": {
+    "url": "https://github.com/tronghieuit/tiny-tts/issues"
+  },
   "homepage": "https://github.com/tronghieuit/tiny-tts#readme",
   "dependencies": {
+    "commander": "^12.0.0",
     "onnxruntime-node": "^1.19.0",
-    "wavefile": "^11.0.0",
-    "commander": "^12.0.0"
+    "wavefile": "^11.0.0"
   },
-  "scripts": {}
+  "scripts": {
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "lint:migrate": "npx @biomejs/biome migrate --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.13"
+  }
 }

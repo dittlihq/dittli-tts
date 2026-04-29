@@ -34,6 +34,9 @@ MANIFEST
 # Output files and directories
 infer_outputs/
 
+# Linting caches
+.ruff_cache/
+
 # Testing and profiling
 .tox/
 .nox/

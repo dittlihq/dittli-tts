@@ -3,26 +3,28 @@
  * Mirrors tiny_tts/text/english.py: CMU dictionary lookup with a neural G2P
  * fallback (g2p_predict.js) for OOV words.
  */
-const fs = require('fs');
-const path = require('path');
-const g2pPredict = require('./g2p_predict');
+const fs = require("node:fs");
+const path = require("node:path");
+const g2pPredict = require("./g2p_predict");
 
 let CMU = {};
-const _cmuDictPath = path.join(__dirname, 'cmudict.json');
+const _cmuDictPath = path.join(__dirname, "cmudict.json");
 if (fs.existsSync(_cmuDictPath)) {
   try {
-    CMU = JSON.parse(fs.readFileSync(_cmuDictPath, 'utf-8'));
+    CMU = JSON.parse(fs.readFileSync(_cmuDictPath, "utf-8"));
   } catch (e) {
-    console.warn('[TinyTTS] Failed to load cmudict.json:', e.message);
+    console.warn("[TinyTTS] Failed to load cmudict.json:", e.message);
   }
 }
 if (Object.keys(CMU).length === 0) {
-  console.warn('[TinyTTS] cmudict.json missing; English G2P will lean heavily on the neural fallback.');
+  console.warn(
+    "[TinyTTS] cmudict.json missing; English G2P will lean heavily on the neural fallback.",
+  );
 }
 
 function _parsePhone(phn) {
   const m = phn.match(/(\d)$/);
-  if (m) return [phn.slice(0, -1).toLowerCase(), parseInt(m[1]) + 1];
+  if (m) return [phn.slice(0, -1).toLowerCase(), parseInt(m[1], 10) + 1];
   return [phn.toLowerCase(), 0];
 }
 
@@ -41,12 +43,20 @@ function _parseSyllables(syllables) {
 
 function _mapPhoneme(ph, symbolSet) {
   const rep = {
-    '：': ',', '；': ',', '，': ',', '。': '.',
-    '！': '!', '？': '?', '\n': '.', '\xB7': ',',
-    '、': ',', '...': '…', 'v': 'V',
+    "：": ",",
+    "；": ",",
+    "，": ",",
+    "。": ".",
+    "！": "!",
+    "？": "?",
+    "\n": ".",
+    "\xB7": ",",
+    "、": ",",
+    "...": "…",
+    v: "V",
   };
   if (rep[ph] !== undefined) ph = rep[ph];
-  if (symbolSet && !symbolSet.has(ph)) return 'UNK';
+  if (symbolSet && !symbolSet.has(ph)) return "UNK";
   return ph;
 }
 
@@ -59,8 +69,8 @@ function graphemeToPhonemeEN(text, opts = {}) {
   const word2ph = [];
 
   for (const word of words) {
-    const lead = (word.match(/^[^a-z0-9]*/) || [''])[0];
-    const trail = (word.match(/[^a-z0-9']*$/) || [''])[0];
+    const lead = (word.match(/^[^a-z0-9]*/) || [""])[0];
+    const trail = (word.match(/[^a-z0-9']*$/) || [""])[0];
     const core = word.slice(lead.length, word.length - trail.length);
 
     for (const ch of lead) {
@@ -79,7 +89,10 @@ function graphemeToPhonemeEN(text, opts = {}) {
         let allFound = true;
         for (let pi = 0; pi < parts.length; pi++) {
           const part = parts[pi];
-          if (pi > 0) { partPhones.push("'"); partTones.push(0); }
+          if (pi > 0) {
+            partPhones.push("'");
+            partTones.push(0);
+          }
           if (part.length === 0) continue;
           const upper = part.toUpperCase();
           if (CMU[upper]) {
@@ -132,7 +145,7 @@ function graphemeToPhonemeEN(text, opts = {}) {
             allPhones.push(_mapPhoneme(ch.toLowerCase(), symbolSet));
             allTones.push(0);
           }
-          word2ph.push(core.replace(/'/g, '').length);
+          word2ph.push(core.replace(/'/g, "").length);
         }
       }
     }
@@ -145,9 +158,12 @@ function graphemeToPhonemeEN(text, opts = {}) {
   }
 
   if (padStartEnd) {
-    allPhones.unshift('_'); allPhones.push('_');
-    allTones.unshift(0); allTones.push(0);
-    word2ph.unshift(1); word2ph.push(1);
+    allPhones.unshift("_");
+    allPhones.push("_");
+    allTones.unshift(0);
+    allTones.push(0);
+    word2ph.unshift(1);
+    word2ph.push(1);
   }
   return { phones: allPhones, tones: allTones, word2ph };
 }
