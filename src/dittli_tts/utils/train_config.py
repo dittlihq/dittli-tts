@@ -38,3 +38,7 @@ NUM_WORKERS = 4
 # Speakers — Thorsten Voice ships as a single speaker.
 N_SPEAKERS_DE = 1
 SPK2ID_DE = {"THORSTEN": 0}
+
+# Speakers — English (LJSpeech / single speaker).
+N_SPEAKERS_EN = 1
+SPK2ID_EN = {"MALE": 0}

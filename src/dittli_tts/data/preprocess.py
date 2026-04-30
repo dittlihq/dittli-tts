@@ -34,6 +34,8 @@ def main():
     p.add_argument("--sr", type=int, default=SAMPLING_RATE)
     p.add_argument("--n-fft", type=int, default=FILTER_LENGTH)
     p.add_argument("--hop", type=int, default=HOP_LENGTH)
+    p.add_argument("--language", default="DE", choices=["DE", "EN"],
+                   help="Language for G2P (default: DE).")
     p.add_argument("--force", action="store_true",
                    help="Recompute even if cache files already exist.")
     args = p.parse_args()
@@ -58,7 +60,7 @@ def main():
             skipped += 1
             continue
         try:
-            compute_and_cache(wav_path, transcript, args.sr, args.n_fft, args.hop)
+            compute_and_cache(wav_path, transcript, args.sr, args.n_fft, args.hop, args.language)
             ok += 1
         except Exception as e:  # surface root cause and continue
             failed += 1

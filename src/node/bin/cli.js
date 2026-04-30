@@ -8,7 +8,7 @@ const program = new Command();
 program
   .name("dittli-tts")
   .description("Ultra-lightweight text-to-speech (1.6M params) — pure Node.js ONNX inference")
-  .version("4.0.0")
+  .version(require("../../../package.json").version)
   .argument("<text>", "Text to synthesize")
   .option("-o, --output <path>", "Output file path", "output.wav")
   .option("-s, --speaker <id>", "Speaker ID", "MALE")

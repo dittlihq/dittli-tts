@@ -15,6 +15,7 @@ from torch.utils.data import Dataset
 from dittli_tts.audio import load_audio, spectrogram_torch
 from dittli_tts.nn import commons
 from dittli_tts.text import phonemes_to_ids
+from dittli_tts.text.english import grapheme_to_phoneme as en_g2p
 from dittli_tts.text.german import grapheme_to_phoneme as de_g2p
 from dittli_tts.utils.config import (
     SAMPLING_RATE,
@@ -53,14 +54,18 @@ def compute_and_cache(
     sr: int = SAMPLING_RATE,
     n_fft: int = FILTER_LENGTH,
     hop: int = HOP_LENGTH,
+    language: str = "DE",
 ) -> None:
     """Compute spec + phoneme IDs for a single utterance and cache to disk."""
     wav = load_audio(wav_path, sr).unsqueeze(0)  # [1, T]
     spec = spectrogram_torch(wav, n_fft, hop, n_fft, center=False).squeeze(0)
     torch.save(spec.cpu(), _spec_path(wav_path))
 
-    phones, tones, _ = de_g2p(text)
-    phone_ids, tone_ids, lang_ids = phonemes_to_ids(phones, tones, "DE")
+    if language == "EN":
+        phones, tones, _ = en_g2p(text)
+    else:
+        phones, tones, _ = de_g2p(text)
+    phone_ids, tone_ids, lang_ids = phonemes_to_ids(phones, tones, language)
     if ADD_BLANK:
         phone_ids = commons.insert_blanks(phone_ids, 0)
         tone_ids = commons.insert_blanks(tone_ids, 0)
@@ -103,6 +108,7 @@ class ThorstenDataset(Dataset):
         ja_bert_dim: int = 768,
         max_spec_len: int = 1500,
         require_cache: bool = True,
+        language: str = "DE",
     ):
         self.metadata_path = metadata_path
         self.wavs_dir = wavs_dir
@@ -114,6 +120,7 @@ class ThorstenDataset(Dataset):
         self.ja_bert_dim = ja_bert_dim
         self.max_spec_len = max_spec_len
         self.require_cache = require_cache
+        self.language = language
 
         rows = _read_metadata(metadata_path)
         self.items: list[tuple[str, str]] = []
@@ -143,7 +150,7 @@ class ThorstenDataset(Dataset):
                     f"Missing cached features for {wav_path}. "
                     f"Run dittli_tts.data.preprocess first."
                 )
-            compute_and_cache(wav_path, transcript, self.sr, self.n_fft, self.hop)
+            compute_and_cache(wav_path, transcript, self.sr, self.n_fft, self.hop, self.language)
 
         spec = torch.load(spec_path, map_location="cpu", weights_only=True)
         ph = torch.load(ph_path, map_location="cpu", weights_only=True)

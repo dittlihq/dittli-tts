@@ -75,6 +75,7 @@ class TrainerConfig:
     num_workers: int = NUM_WORKERS
     device: str = "cuda"
     amp: bool = True
+    language: str = "DE"
 
 
 def _slice_wav_for_segment(wav: torch.Tensor, ids_slice: torch.Tensor, segment_size: int):
@@ -91,7 +92,7 @@ class Trainer:
         device = torch.device(cfg.device if torch.cuda.is_available() or cfg.device == "cpu" else "cpu")
         self.device = device
 
-        self.dataset = ThorstenDataset(cfg.metadata_path, cfg.wavs_dir)
+        self.dataset = ThorstenDataset(cfg.metadata_path, cfg.wavs_dir, language=cfg.language)
         self.loader = DataLoader(
             self.dataset,
             batch_size=cfg.batch_size,
