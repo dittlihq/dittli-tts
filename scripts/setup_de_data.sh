@@ -128,20 +128,16 @@ N_WAVS=$(find "$DATA_DIR/wavs" -name "*.wav" | wc -l)
 echo "[setup] dataset OK — $N_WAVS wav files, $(wc -l < "$DATA_DIR/metadata.csv") rows in metadata.csv"
 
 # ---- 2. English warm-start checkpoint ----------------------------------
+# checkpoints/G.pth is committed to the repo, so a fresh clone already has it.
+# This guard is a sanity check for environments where the file was stripped
+# (e.g. minimal CI images that exclude the binary).
 EN_CKPT="$CKPT_DIR/G.pth"
 if [ ! -f "$EN_CKPT" ]; then
-    echo "[setup] downloading English G.pth from HuggingFace (~6 MB) ..."
-    python -c "
-from huggingface_hub import hf_hub_download
-import shutil, os
-p = hf_hub_download(repo_id='backtracking/dittli-tts', filename='G.pth')
-os.makedirs('$CKPT_DIR', exist_ok=True)
-shutil.copy(p, '$EN_CKPT')
-print('[setup] saved', '$EN_CKPT')
-"
-else
-    echo "[setup] English checkpoint already present at $EN_CKPT"
+    echo "[setup] ERROR: $EN_CKPT not found." >&2
+    echo "        It ships with the repo; re-clone or restore from git." >&2
+    exit 1
 fi
+echo "[setup] English checkpoint present at $EN_CKPT"
 
 # ---- 3. Symbol snapshot (used by the embedding remapper) ---------------
 SYM_SNAP="$CKPT_DIR/symbols_v1_en.txt"
