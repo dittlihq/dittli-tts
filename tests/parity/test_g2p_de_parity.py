@@ -1,6 +1,6 @@
 """Cross-check Python and JS German G2P over the curated word list.
 
-Drift between src/dittli_tts/text/german.py and src/node/g2p_de.js is
+Drift between src/dittli_tts/text/german.py and packages/tts-de/src/g2p_de.js is
 the most common silent training/inference bug in this repo, so this
 runs on every `pytest` invocation (no opt-in marker).
 """

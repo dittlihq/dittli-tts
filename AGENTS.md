@@ -11,9 +11,10 @@ TTS model as both:
 
 - **Python package** (`src/dittli_tts/`) — full training + inference,
   published to PyPI as `dittli-tts`.
-- **Node package** (`src/node/`) — pure ONNX-runtime inference, published
-  to npm as `dittli-tts`. **The Node package is the canonical deployment
-  target.**
+- **Node packages** (`packages/tts-core`, `packages/tts-en`, `packages/tts-de`) —
+  pure ONNX-runtime inference, published to npm as `@dittli/tts-core`,
+  `@dittli/tts-en`, `@dittli/tts-de`. **The Node package is the canonical
+  deployment target.**
 
 Two languages: English (original) and German (Thorsten Voice fine-tune).
 
@@ -32,14 +33,15 @@ Two languages: English (original) and German (Thorsten Voice fine-tune).
 │   │   ├── data/                    # dataset.py, preprocess.py
 │   │   ├── models/, nn/, alignment/
 │   │   └── text/                    # G2P (english.py, german.py) + symbols
-│   └── node/                        # Node package source
-│       ├── index.js, bin/cli.js
-│       └── g2p_en.js, g2p_de.js, ...
+│
+├── packages/                        # npm workspace
+│   ├── tts-core/                    # @dittli/tts-core — engine + CLI
+│   ├── tts-en/                      # @dittli/tts-en  — English G2P + metadata
+│   └── tts-de/                      # @dittli/tts-de  — German G2P + metadata
 │
 ├── tools/                           # Python dev tools (app.py, benchmarks)
 ├── scripts/                         # Data prep + codegen utilities
 ├── tests/                           # See tests/README.md
-├── models/                          # ONNX sidecar metadata (shared)
 ├── checkpoints/                     # G.pth (committed) + symbol snapshot
 └── docs/                            # Training guide + historical notes
 ```
@@ -80,11 +82,11 @@ or commit large binaries to make a test pass.
    are required by the upstream Apache-2.0 fork. Renaming is fine
    anywhere else.
 2. **Python ↔ JS G2P parity.** `src/dittli_tts/text/german.py` is the
-   source of truth; `src/node/g2p_de.js` mirrors it. Drift is the most
-   common silent training/inference bug in this repo, so
+   source of truth; `packages/tts-de/src/g2p_de.js` mirrors it. Drift is
+   the most common silent training/inference bug in this repo, so
    `tests/parity/test_g2p_de_parity.py` runs on every `npm test`. If
-   you change either side, run `python scripts/gen_de_rules.py` to
-   regenerate `src/node/g2p_de_rules.json` and re-run the parity test.
+   you change either side, run `npm run g2p:gen` to regenerate
+   `packages/tts-de/src/g2p_de_rules.json` and re-run the parity test.
 3. **Symbol-table compatibility.** `src/dittli_tts/text/symbols.py`
    defines the language ordering and tone offsets the trained
    checkpoints expect. Adding entries is OK; reordering or deleting
@@ -97,8 +99,8 @@ or commit large binaries to make a test pass.
    and lives in `checkpoints/`.
 5. **No new HuggingFace dependency.** The repo deliberately does not
    use HF Hub or `huggingface_hub` at runtime. The npm package's HF
-   model URL (`src/node/index.js:HF_URL`) is being migrated away from;
-   don't add new HF call sites.
+   model URL (`packages/tts-core/src/index.js:HF_URL`) is being migrated
+   away from; don't add new HF call sites.
 6. **Top-level `import dittli_tts` stays cheap.** `src/dittli_tts/__init__.py`
    lazy-loads torch / inference engine / english G2P inside method
    bodies. Don't move heavy imports back to module scope; that breaks

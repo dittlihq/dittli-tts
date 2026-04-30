@@ -1,7 +1,7 @@
-"""Emit src/node/g2p_de_rules.json from the Python German G2P module.
+"""Emit packages/tts-de/src/g2p_de_rules.json from the Python German G2P module.
 
-The JS port (src/node/g2p_de.js) reads this JSON so it cannot drift from
-the Python source of truth. Re-run after every edit to german.py /
+The JS port (packages/tts-de/src/g2p_de.js) reads this JSON so it cannot
+drift from the Python source of truth. Re-run after every edit to german.py /
 abbreviations.py / number_norm.py.
 
 The top-level `dittli_tts/__init__.py` eagerly imports torch, which we don't
@@ -67,6 +67,6 @@ def main(out_path: str) -> None:
 
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-        ROOT, "src", "node", "g2p_de_rules.json"
+        ROOT, "packages", "tts-de", "src", "g2p_de_rules.json"
     )
     main(out)

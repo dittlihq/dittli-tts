@@ -1,5 +1,5 @@
-"""Smoke-test the Node CLI: spawn `node src/node/bin/cli.js`, assert it
-writes a wav file. Skipped if Node, npm dependencies, or an ONNX model
+"""Smoke-test the Node CLI: spawn `node packages/tts-core/bin/cli.js`, assert
+it writes a wav file. Skipped if Node, npm dependencies, or an ONNX model
 are missing.
 """
 from __future__ import annotations
@@ -12,7 +12,7 @@ import pytest
 
 @pytest.fixture(scope="module")
 def cli_path(repo_root: Path) -> Path:
-    p = repo_root / "src" / "node" / "bin" / "cli.js"
+    p = repo_root / "packages" / "tts-core" / "bin" / "cli.js"
     assert p.exists(), f"missing CLI entry point at {p}"
     return p
 

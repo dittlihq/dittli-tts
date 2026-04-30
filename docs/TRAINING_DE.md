@@ -262,7 +262,7 @@ python -m dittli_tts.inference.export \
     --out models/dittli-de.onnx
 
 # 3. Run via the npm package (no Python at all)
-node src/node/bin/cli.js "Guten Morgen, wie geht es dir?" \
+node packages/tts-core/bin/cli.js "Guten Morgen, wie geht es dir?" \
     --model models/dittli-de.onnx -o de.wav
 ```
 
