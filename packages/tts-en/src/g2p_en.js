@@ -7,19 +7,23 @@ const fs = require("node:fs");
 const path = require("node:path");
 const g2pPredict = require("./g2p_predict");
 
-let CMU = {};
+let _cmu = null;
 const _cmuDictPath = path.join(__dirname, "cmudict.json");
-if (fs.existsSync(_cmuDictPath)) {
-  try {
-    CMU = JSON.parse(fs.readFileSync(_cmuDictPath, "utf-8"));
-  } catch (e) {
-    console.warn("[DittliTTS] Failed to load cmudict.json:", e.message);
+
+function _getCMU() {
+  if (_cmu !== null) return _cmu;
+  if (fs.existsSync(_cmuDictPath)) {
+    try {
+      _cmu = JSON.parse(fs.readFileSync(_cmuDictPath, "utf-8"));
+    } catch (e) {
+      console.warn("[DittliTTS] Failed to load cmudict.json:", e.message);
+      _cmu = {};
+    }
+  } else {
+    console.warn("[DittliTTS] cmudict.json missing; English G2P will lean heavily on the neural fallback.");
+    _cmu = {};
   }
-}
-if (Object.keys(CMU).length === 0) {
-  console.warn(
-    "[DittliTTS] cmudict.json missing; English G2P will lean heavily on the neural fallback.",
-  );
+  return _cmu;
 }
 
 function _parsePhone(phn) {
@@ -95,8 +99,8 @@ function graphemeToPhonemeEN(text, opts = {}) {
           }
           if (part.length === 0) continue;
           const upper = part.toUpperCase();
-          if (CMU[upper]) {
-            const [ph, tn] = _parseSyllables([CMU[upper]]);
+          if (_getCMU()[upper]) {
+            const [ph, tn] = _parseSyllables([_getCMU()[upper]]);
             partPhones.push(...ph);
             partTones.push(...tn);
           } else {
@@ -123,8 +127,8 @@ function graphemeToPhonemeEN(text, opts = {}) {
 
       if (!resolved) {
         const upper = core.toUpperCase();
-        if (CMU[upper]) {
-          const [phones, tones] = _parseSyllables([CMU[upper]]);
+        if (_getCMU()[upper]) {
+          const [phones, tones] = _parseSyllables([_getCMU()[upper]]);
           for (const p of phones) allPhones.push(_mapPhoneme(p, symbolSet));
           allTones.push(...tones);
           word2ph.push(phones.length);
