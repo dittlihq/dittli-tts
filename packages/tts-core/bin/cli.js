@@ -1,14 +1,23 @@
 #!/usr/bin/env node
 
-const DittliTTS = require("../index");
+const DittliTTS = require("../src/index");
 const { Command } = require("commander");
+
+// Auto-register any language packs that are installed alongside this package.
+for (const pkg of ["@dittli/tts-en", "@dittli/tts-de"]) {
+  try {
+    require(pkg);
+  } catch (_) {
+    // not installed — silently skip
+  }
+}
 
 const program = new Command();
 
 program
   .name("dittli-tts")
   .description("Ultra-lightweight text-to-speech (1.6M params) — pure Node.js ONNX inference")
-  .version(require("../../../package.json").version)
+  .version(require("../package.json").version)
   .argument("<text>", "Text to synthesize")
   .option("-o, --output <path>", "Output file path", "output.wav")
   .option("-s, --speaker <id>", "Speaker ID", "MALE")
@@ -16,7 +25,7 @@ program
   .option("--model <path>", "Path to ONNX model (auto-downloaded if omitted)")
   .option(
     "--metadata <path>",
-    "Path to model metadata JSON (defaults to <model>.json or English fallback)",
+    "Path to model metadata JSON (defaults to <model>.json or language-pack default)",
   )
   .option("--device <dev>", "Device: cpu or gpu", "cpu")
   .action(async (text, options) => {

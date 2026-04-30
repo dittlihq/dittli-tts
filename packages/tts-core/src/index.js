@@ -1,15 +1,14 @@
 /**
- * DittliTTS - Pure Node.js text-to-speech via ONNX Runtime
+ * DittliTTS — Pure Node.js text-to-speech via ONNX Runtime.
  *
- * Loads a model + a metadata sidecar (JSON) describing the language, symbol
- * table, language ID, tone offset and sample rate. The metadata picks the
- * G2P implementation (English or German). Swap the model+sidecar pair to
- * change language — no code changes required.
+ * This package is the inference engine only. Install a language pack to
+ * register the G2P implementation for your target language:
  *
- * Usage:
- *   const DittliTTS = require('dittli-tts');
- *   const tts = new DittliTTS({ modelPath: './dittli-de.onnx' });
- *   await tts.speak('Guten Morgen', 'output.wav');
+ *   require('@dittli/tts-en');  // English
+ *   require('@dittli/tts-de');  // German
+ *
+ * Language packs call DittliTTS.registerLanguage() on load, so simply
+ * requiring them is enough — no further setup needed.
  */
 
 const ort = require("onnxruntime-node");
@@ -19,24 +18,14 @@ const path = require("node:path");
 const http = require("node:http");
 const https = require("node:https");
 
-const { graphemeToPhonemeEN } = require("./g2p_en");
-const { graphemeToPhonemeDE } = require("./g2p_de");
-
-const G2P_BY_LANG = {
-  en: graphemeToPhonemeEN,
-  de: graphemeToPhonemeDE,
-};
+const G2P_BY_LANG = {};
 
 const HF_URL = "https://huggingface.co/backtracking/dittli-tts/resolve/main/dittli.onnx";
-
-// Default English metadata, used when an .onnx is loaded without a sidecar
-// (so the auto-download path keeps working without an extra file).
-const DEFAULT_EN_METADATA_PATH = path.join(__dirname, "..", "..", "models", "dittli-en.json");
 
 async function _download(url, dest) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith("https") ? https : http;
-    const opts = { headers: { "User-Agent": "dittli-tts-node/5.1" } };
+    const opts = { headers: { "User-Agent": "dittli-tts-node/0.1" } };
 
     function fetch(u) {
       client
@@ -100,12 +89,16 @@ class DittliTTS {
     this._initialized = false;
   }
 
+  static registerLanguage(lang, g2pFn) {
+    G2P_BY_LANG[lang] = g2pFn;
+  }
+
   async init() {
     if (this._initialized) return;
 
     let modelPath = this.modelPath;
     if (!modelPath) {
-      const dir = path.join(__dirname, "..", "..", "models");
+      const dir = path.join(process.cwd(), "models");
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       modelPath = path.join(dir, "dittli.onnx");
 
@@ -122,8 +115,8 @@ class DittliTTS {
       const guess = modelPath.replace(/\.onnx$/, ".json");
       if (fs.existsSync(guess)) {
         metadataPath = guess;
-      } else if (fs.existsSync(DEFAULT_EN_METADATA_PATH)) {
-        metadataPath = DEFAULT_EN_METADATA_PATH;
+      } else if (DittliTTS._defaultMetadataPath && fs.existsSync(DittliTTS._defaultMetadataPath)) {
+        metadataPath = DittliTTS._defaultMetadataPath;
       } else {
         throw new Error(
           "No metadata sidecar found. Provide { metadataPath } or place a JSON file " +
@@ -142,7 +135,7 @@ class DittliTTS {
     if (!G2P_BY_LANG[meta.language]) {
       throw new Error(
         `No G2P registered for language "${meta.language}". ` +
-          `Available: ${Object.keys(G2P_BY_LANG).join(", ")}`,
+          `Install the matching language pack: @dittli/tts-${meta.language}`,
       );
     }
 
@@ -235,5 +228,7 @@ class DittliTTS {
     }
   }
 }
+
+DittliTTS._defaultMetadataPath = null;
 
 module.exports = DittliTTS;

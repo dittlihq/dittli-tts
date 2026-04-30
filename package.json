@@ -1,25 +1,11 @@
 {
   "name": "dittli-tts",
   "version": "0.1.0",
-  "description": "Ultra-lightweight text-to-speech (1.6M params). Pure Node.js inference via ONNX Runtime — zero Python dependency.",
-  "main": "src/node/index.js",
-  "types": "src/node/index.d.ts",
-  "files": [
-    "src/node/index.js",
-    "src/node/index.d.ts",
-    "src/node/g2p_en.js",
-    "src/node/g2p_de.js",
-    "src/node/g2p_de_rules.json",
-    "src/node/cmudict.json",
-    "src/node/g2p_predict.js",
-    "src/node/g2p_model.json",
-    "src/node/bin/cli.js",
-    "src/node/README.md",
-    "models/*.json"
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
-  "bin": {
-    "dittli-tts": "src/node/bin/cli.js"
-  },
+  "description": "Monorepo for DittliTTS — ultra-lightweight Node.js + Python TTS.",
   "keywords": [
     "tts",
     "text-to-speech",
@@ -34,18 +20,12 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dittlihq/dittli-tts.git",
-    "directory": "src/node"
+    "url": "git+https://github.com/dittlihq/dittli-tts.git"
   },
   "bugs": {
     "url": "https://github.com/dittlihq/dittli-tts/issues"
   },
   "homepage": "https://github.com/dittlihq/dittli-tts#readme",
-  "dependencies": {
-    "commander": "^12.0.0",
-    "onnxruntime-node": "^1.19.0",
-    "wavefile": "^11.0.0"
-  },
   "scripts": {
     "test": "pytest",
     "test:unit": "pytest tests/unit",

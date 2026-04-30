@@ -16,6 +16,9 @@ declare class DittliTTS {
     device?: "cpu" | "gpu";
   });
 
+  static registerLanguage(lang: string, g2pFn: (text: string, opts?: object) => { phones: string[]; tones: number[] }): void;
+  static _defaultMetadataPath: string | null;
+
   metadata: ModelMetadata | null;
 
   init(): Promise<void>;
@@ -40,4 +43,4 @@ declare class DittliTTS {
   dispose(): Promise<void>;
 }
 
-export default DittliTTS;
+export = DittliTTS;

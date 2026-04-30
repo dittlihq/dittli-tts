@@ -1,0 +1,44 @@
+{
+  "name": "@dittli/tts-core",
+  "version": "0.1.0",
+  "description": "DittliTTS inference engine — pure Node.js ONNX runtime. Install a language package (@dittli/tts-en, @dittli/tts-de) alongside this to synthesise speech.",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "bin": {
+    "dittli-tts": "bin/cli.js"
+  },
+  "files": [
+    "src/index.js",
+    "src/index.d.ts",
+    "bin/cli.js"
+  ],
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "speech-synthesis",
+    "onnx",
+    "lightweight",
+    "node-tts",
+    "edge-tts",
+    "offline-tts"
+  ],
+  "author": "Dittli TTS Contributors",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dittlihq/dittli-tts.git",
+    "directory": "packages/tts-core"
+  },
+  "bugs": {
+    "url": "https://github.com/dittlihq/dittli-tts/issues"
+  },
+  "homepage": "https://github.com/dittlihq/dittli-tts#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "onnxruntime-node": "^1.19.0",
+    "wavefile": "^11.0.0",
+    "commander": "^12.0.0"
+  }
+}

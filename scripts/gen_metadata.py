@@ -57,33 +57,32 @@ def _load_old_en_symbols() -> list:
         return [line.rstrip("\n") for line in f]
 
 
-def main(out_dir: str) -> None:
-    os.makedirs(out_dir, exist_ok=True)
+def main() -> None:
+    targets = {
+        "EN": (
+            os.path.join(ROOT, "packages", "tts-en", "metadata", "dittli-en.json"),
+            "english_v1",
+            {"MALE": 0},
+            # The shipped English ONNX was trained against the 219-symbol list
+            # (before German extended the union), so use the snapshot.
+            _load_old_en_symbols(),
+        ),
+        "DE": (
+            os.path.join(ROOT, "packages", "tts-de", "metadata", "dittli-de.json"),
+            "german_v1",
+            {"THORSTEN": 0},
+            list(new_symbols),
+        ),
+    }
 
-    # The currently shipped English ONNX was trained against the 219-symbol
-    # list, before German extended the union. The English sidecar must
-    # reference that older list so phoneme IDs line up.
-    en_symbols = _load_old_en_symbols()
-    en = build("EN", "english_v1", {"MALE": 0}, en_symbols)
-
-    # The German checkpoint will be trained against the new (extended) list,
-    # which is what `from dittli_tts.text.symbols import symbols` returns.
-    de = build("DE", "german_v1", {"THORSTEN": 0}, list(new_symbols))
-
-    en_path = os.path.join(out_dir, "dittli-en.json")
-    de_path = os.path.join(out_dir, "dittli-de.json")
-
-    with open(en_path, "w", encoding="utf-8") as f:
-        json.dump(en, f, ensure_ascii=False, indent=2)
-    with open(de_path, "w", encoding="utf-8") as f:
-        json.dump(de, f, ensure_ascii=False, indent=2)
-
-    print(f"Wrote {en_path} (lang_id={en['language_id']}, tone_offset={en['tone_offset']}, "
-          f"n_symbols={len(en['symbols'])})")
-    print(f"Wrote {de_path} (lang_id={de['language_id']}, tone_offset={de['tone_offset']}, "
-          f"n_symbols={len(de['symbols'])})")
+    for lang, (out_path, phoneme_set, spk2id, symbols) in targets.items():
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        meta = build(lang, phoneme_set, spk2id, symbols)
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(meta, f, ensure_ascii=False, indent=2)
+        print(f"Wrote {out_path} (lang_id={meta['language_id']}, "
+              f"tone_offset={meta['tone_offset']}, n_symbols={len(meta['symbols'])})")
 
 
 if __name__ == "__main__":
-    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "models")
-    main(out)
+    main()

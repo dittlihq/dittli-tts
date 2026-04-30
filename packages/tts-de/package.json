@@ -1,0 +1,37 @@
+{
+  "name": "@dittli/tts-de",
+  "version": "0.1.0",
+  "description": "DittliTTS German language pack — G2P + model metadata for @dittli/tts-core.",
+  "main": "src/index.js",
+  "files": [
+    "src/index.js",
+    "src/g2p_de.js",
+    "src/g2p_de_rules.json",
+    "metadata/dittli-de.json"
+  ],
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "german",
+    "deutsch",
+    "g2p",
+    "dittli"
+  ],
+  "author": "Dittli TTS Contributors",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dittlihq/dittli-tts.git",
+    "directory": "packages/tts-de"
+  },
+  "bugs": {
+    "url": "https://github.com/dittlihq/dittli-tts/issues"
+  },
+  "homepage": "https://github.com/dittlihq/dittli-tts#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@dittli/tts-core": "0.1.0"
+  }
+}
