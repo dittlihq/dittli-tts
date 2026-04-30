@@ -23,15 +23,18 @@ from dittli_tts.utils.config import SAMPLING_RATE
 REPO_ROOT = os.getcwd()
 
 
-def _resolve_symbols(lang: str) -> list[str]:
-    """English ONNX was trained against the pre-German 219-symbol list. If a
-    snapshot exists in checkpoints/symbols_v1_en.txt and the model's vocab
-    matches its length, prefer it. Otherwise use the current symbol table."""
+def _resolve_symbols(lang: str, n_vocab: int | None = None) -> list[str]:
+    """Pick the symbol list that matches the checkpoint's actual embedding size."""
     if lang.upper() == "EN":
         snap = os.path.join(REPO_ROOT, "checkpoints", "symbols_v1_en.txt")
         if os.path.exists(snap):
             with open(snap, encoding="utf-8") as f:
-                return [line.rstrip("\n") for line in f]
+                snap_syms = [line.rstrip("\n") for line in f]
+            if n_vocab is None or len(snap_syms) == n_vocab:
+                return snap_syms
+    if n_vocab is not None and len(new_symbols) != n_vocab:
+        print(f"Warning: current symbol table has {len(new_symbols)} entries but "
+              f"checkpoint has vocab size {n_vocab}. Metadata may be mismatched.")
     return list(new_symbols)
 
 
@@ -144,7 +147,8 @@ def main():
     sidecar = args.out.replace(".onnx", ".json")
     if not sidecar.endswith(".json"):
         sidecar = args.out + ".json"
-    symbols = _resolve_symbols(args.lang)
+    n_vocab = model.enc_p.emb.weight.shape[0]
+    symbols = _resolve_symbols(args.lang, n_vocab)
     meta = _build_metadata(args.lang, spk2id, symbols)
     with open(sidecar, "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)

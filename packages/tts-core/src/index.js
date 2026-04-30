@@ -15,41 +15,9 @@ const ort = require("onnxruntime-node");
 const { WaveFile } = require("wavefile");
 const fs = require("node:fs");
 const path = require("node:path");
-const http = require("node:http");
-const https = require("node:https");
 
 const G2P_BY_LANG = {};
-
-const HF_URL = "https://huggingface.co/backtracking/dittli-tts/resolve/main/dittli.onnx";
-
-async function _download(url, dest) {
-  return new Promise((resolve, reject) => {
-    const client = url.startsWith("https") ? https : http;
-    const opts = { headers: { "User-Agent": "dittli-tts-node/0.1" } };
-
-    function fetch(u) {
-      client
-        .get(u, opts, (res) => {
-          if (res.statusCode === 302 || res.statusCode === 301) {
-            fetch(res.headers.location);
-            return;
-          }
-          if (res.statusCode !== 200) {
-            reject(new Error(`HTTP ${res.statusCode}`));
-            return;
-          }
-          const file = fs.createWriteStream(dest);
-          res.pipe(file);
-          file.on("finish", () => {
-            file.close();
-            resolve();
-          });
-        })
-        .on("error", reject);
-    }
-    fetch(url);
-  });
-}
+const DEFAULT_METADATA_BY_LANG = {};
 
 function _loadMetadata(metadataPath) {
   const raw = fs.readFileSync(metadataPath, "utf-8");
@@ -82,6 +50,7 @@ class DittliTTS {
   constructor(opts = {}) {
     this.modelPath = opts.modelPath || null;
     this.metadataPath = opts.metadataPath || null;
+    this.language = opts.language || null;
     this.device = opts.device || "cpu";
     this.session = null;
     this.metadata = null;
@@ -93,20 +62,18 @@ class DittliTTS {
     G2P_BY_LANG[lang] = g2pFn;
   }
 
+  static registerDefaultMetadata(lang, metadataPath) {
+    DEFAULT_METADATA_BY_LANG[lang] = metadataPath;
+  }
+
   async init() {
     if (this._initialized) return;
 
-    let modelPath = this.modelPath;
+    const modelPath = this.modelPath;
     if (!modelPath) {
-      const dir = path.join(process.cwd(), "models");
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      modelPath = path.join(dir, "dittli.onnx");
-
-      if (!fs.existsSync(modelPath)) {
-        console.log("Downloading DittliTTS ONNX model (~6 MB)...");
-        await _download(HF_URL, modelPath);
-        console.log("Model saved to", modelPath);
-      }
+      throw new Error(
+        "No modelPath provided. Download the ONNX model and pass { modelPath: '/path/to/dittli.onnx' }.",
+      );
     }
     if (!fs.existsSync(modelPath)) throw new Error(`Model not found: ${modelPath}`);
 
@@ -115,12 +82,23 @@ class DittliTTS {
       const guess = modelPath.replace(/\.onnx$/, ".json");
       if (fs.existsSync(guess)) {
         metadataPath = guess;
-      } else if (DittliTTS._defaultMetadataPath && fs.existsSync(DittliTTS._defaultMetadataPath)) {
-        metadataPath = DittliTTS._defaultMetadataPath;
+      } else if (this.language && DEFAULT_METADATA_BY_LANG[this.language]
+                 && fs.existsSync(DEFAULT_METADATA_BY_LANG[this.language])) {
+        metadataPath = DEFAULT_METADATA_BY_LANG[this.language];
       } else {
+        const registered = Object.keys(DEFAULT_METADATA_BY_LANG);
+        if (registered.length === 1) {
+          const p = DEFAULT_METADATA_BY_LANG[registered[0]];
+          if (fs.existsSync(p)) metadataPath = p;
+        }
+      }
+      if (!metadataPath) {
         throw new Error(
           "No metadata sidecar found. Provide { metadataPath } or place a JSON file " +
-            `next to ${modelPath} (same basename, .json extension).`,
+            `next to ${modelPath} (same basename, .json extension).` +
+            (Object.keys(DEFAULT_METADATA_BY_LANG).length > 1
+              ? " Multiple language packs are loaded — pass { language: 'en' } to disambiguate."
+              : ""),
         );
       }
     }
@@ -228,7 +206,5 @@ class DittliTTS {
     }
   }
 }
-
-DittliTTS._defaultMetadataPath = null;
 
 module.exports = DittliTTS;

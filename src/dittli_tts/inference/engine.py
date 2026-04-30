@@ -48,6 +48,15 @@ def load_engine(checkpoint_path, device='cuda'):
         if key in model_state:
             if v.shape == model_state[key].shape:
                 new_state_dict[key] = v
+            elif (v.ndim == model_state[key].ndim
+                  and v.shape[1:] == model_state[key].shape[1:]
+                  and v.shape[0] < model_state[key].shape[0]):
+                # Checkpoint has fewer rows (e.g. pre-German symbol table):
+                # copy existing rows, leave the rest at their random init.
+                t = model_state[key].clone()
+                t[:v.shape[0]] = v
+                new_state_dict[key] = t
+                skipped.append(f"{key}: padded ckpt{v.shape}→model{model_state[key].shape}")
             else:
                 skipped.append(f"{key}: ckpt{v.shape} vs model{model_state[key].shape}")
         else:

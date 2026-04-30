@@ -1,3 +1,5 @@
+import os
+
 import gradio as gr
 import nltk
 
@@ -11,9 +13,9 @@ try:
 except Exception as e:
     print(f"NLTK download warning: {e}")
 
-# Initialize the model (auto-downloads from HF Hub if needed)
-print("Initializing DittliTTS...")
-tts = DittliTTS()
+_checkpoint = os.environ.get("DITTLI_CHECKPOINT", "checkpoints/G.pth")
+print(f"Initializing DittliTTS from {_checkpoint} ...")
+tts = DittliTTS(checkpoint_path=_checkpoint)
 print("Model loaded successfully!")
 
 

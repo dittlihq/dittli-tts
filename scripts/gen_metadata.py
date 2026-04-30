@@ -51,21 +51,35 @@ def build(language: str, phoneme_set: str, spk2id: dict, symbols: list) -> dict:
     }
 
 
-def _load_old_en_symbols() -> list:
-    path = os.path.join(ROOT, "checkpoints", "symbols_v1_en.txt")
-    with open(path, encoding="utf-8") as f:
-        return [line.rstrip("\n") for line in f]
+def _resolve_en_symbols(en_checkpoint: str | None = None) -> list:
+    """Use the checkpoint's actual vocab size to pick the right symbol list."""
+    if en_checkpoint:
+        import torch
+        ckpt = torch.load(en_checkpoint, map_location="cpu", weights_only=False)
+        n_vocab = ckpt["model"]["enc_p.emb.weight"].shape[0]
+        if n_vocab == len(list(new_symbols)):
+            return list(new_symbols)
+    snap = os.path.join(ROOT, "checkpoints", "symbols_v1_en.txt")
+    if os.path.exists(snap):
+        with open(snap, encoding="utf-8") as f:
+            return [line.rstrip("\n") for line in f]
+    return list(new_symbols)
 
 
 def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("out_dir", nargs="?", default=None, help="(unused, kept for compat)")
+    parser.add_argument("--en-checkpoint", default=None,
+                        help="Path to English G.pth to detect actual vocab size")
+    args = parser.parse_args()
+
     targets = {
         "EN": (
             os.path.join(ROOT, "packages", "tts-en", "metadata", "dittli-en.json"),
             "english_v1",
             {"MALE": 0},
-            # The shipped English ONNX was trained against the 219-symbol list
-            # (before German extended the union), so use the snapshot.
-            _load_old_en_symbols(),
+            _resolve_en_symbols(args.en_checkpoint),
         ),
         "DE": (
             os.path.join(ROOT, "packages", "tts-de", "metadata", "dittli-de.json"),

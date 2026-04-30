@@ -7,7 +7,6 @@ unit tests and offline tooling fast.
 """
 import os
 
-from dittli_tts.models.synthesizer import VoiceSynthesizer as VoiceSynthesizer
 from dittli_tts.text.symbols import symbols as symbols
 
 

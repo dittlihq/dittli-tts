@@ -16,6 +16,7 @@ from dittli_tts.audio import load_audio, spectrogram_torch
 from dittli_tts.nn import commons
 from dittli_tts.text import phonemes_to_ids
 from dittli_tts.text.english import grapheme_to_phoneme as en_g2p
+from dittli_tts.text.english import normalize_text as en_normalize
 from dittli_tts.text.german import grapheme_to_phoneme as de_g2p
 from dittli_tts.utils.config import (
     SAMPLING_RATE,
@@ -44,8 +45,8 @@ def _spec_path(wav_path: str) -> str:
     return wav_path + ".spec.pt"
 
 
-def _phones_path(wav_path: str) -> str:
-    return wav_path + ".phones.pt"
+def _phones_path(wav_path: str, language: str = "DE") -> str:
+    return wav_path + f".{language.lower()}.phones.pt"
 
 
 def compute_and_cache(
@@ -62,7 +63,7 @@ def compute_and_cache(
     torch.save(spec.cpu(), _spec_path(wav_path))
 
     if language == "EN":
-        phones, tones, _ = en_g2p(text)
+        phones, tones, _ = en_g2p(en_normalize(text))
     else:
         phones, tones, _ = de_g2p(text)
     phone_ids, tone_ids, lang_ids = phonemes_to_ids(phones, tones, language)
@@ -76,7 +77,7 @@ def compute_and_cache(
             "tone_ids": torch.LongTensor(tone_ids),
             "lang_ids": torch.LongTensor(lang_ids),
         },
-        _phones_path(wav_path),
+        _phones_path(wav_path, language),
     )
 
 
@@ -128,6 +129,12 @@ class ThorstenDataset(Dataset):
             wav_path = self._resolve(filename)
             if not os.path.exists(wav_path):
                 continue
+            if max_spec_len:
+                sp = _spec_path(wav_path)
+                if os.path.exists(sp):
+                    spec = torch.load(sp, map_location="cpu", weights_only=True)
+                    if spec.shape[1] > max_spec_len:
+                        continue
             self.items.append((wav_path, transcript))
 
     def _resolve(self, filename: str) -> str:
@@ -143,7 +150,7 @@ class ThorstenDataset(Dataset):
         wav_path, transcript = self.items[idx]
 
         spec_path = _spec_path(wav_path)
-        ph_path = _phones_path(wav_path)
+        ph_path = _phones_path(wav_path, self.language)
         if not os.path.exists(spec_path) or not os.path.exists(ph_path):
             if self.require_cache:
                 raise FileNotFoundError(
