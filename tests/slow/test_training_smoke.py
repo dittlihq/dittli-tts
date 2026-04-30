@@ -22,13 +22,13 @@ pytestmark = pytest.mark.slow
 
 
 def _ensure_cache(dataset, n: int) -> None:
-    from dittli_tts.data.dataset import compute_and_cache
+    from dittli_tts.data.dataset import _phones_path, compute_and_cache
 
     for wav_path, transcript in dataset.items[:n]:
         spec = wav_path + ".spec.pt"
-        ph = wav_path + ".phones.pt"
+        ph = _phones_path(wav_path, dataset.language)
         if not (os.path.exists(spec) and os.path.exists(ph)):
-            compute_and_cache(wav_path, transcript)
+            compute_and_cache(wav_path, transcript, language=dataset.language)
 
 
 def test_training_step_produces_finite_losses(
