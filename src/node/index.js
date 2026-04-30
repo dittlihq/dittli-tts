@@ -31,7 +31,7 @@ const HF_URL = "https://huggingface.co/backtracking/dittli-tts/resolve/main/ditt
 
 // Default English metadata, used when an .onnx is loaded without a sidecar
 // (so the auto-download path keeps working without an extra file).
-const DEFAULT_EN_METADATA_PATH = path.join(__dirname, "..", "models", "dittli-en.json");
+const DEFAULT_EN_METADATA_PATH = path.join(__dirname, "..", "..", "models", "dittli-en.json");
 
 async function _download(url, dest) {
   return new Promise((resolve, reject) => {
@@ -105,7 +105,7 @@ class DittliTTS {
 
     let modelPath = this.modelPath;
     if (!modelPath) {
-      const dir = path.join(__dirname, "..", "models");
+      const dir = path.join(__dirname, "..", "..", "models");
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       modelPath = path.join(dir, "dittli.onnx");
 

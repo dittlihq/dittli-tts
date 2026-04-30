@@ -44,8 +44,8 @@ await de.speak("Guten Morgen, wie geht es dir?", "de.wav");
 CLI:
 
 ```bash
-node bin/cli.js "Hello world" --model models/dittli-en.onnx -o out.wav
-node bin/cli.js "Guten Morgen" --model models/dittli-de.onnx -o out.wav
+npx dittli-tts "Hello world" --model models/dittli-en.onnx -o out.wav
+npx dittli-tts "Guten Morgen" --model models/dittli-de.onnx -o out.wav
 ```
 
 ### Python
@@ -57,14 +57,14 @@ pip install dittli-tts
 ```python
 from dittli_tts import DittliTTS
 
-tts = DittliTTS()
+tts = DittliTTS(checkpoint_path="G.pth")
 tts.speak("Hello, world!", output_path="hello.wav")
 ```
 
 German inference (requires trained checkpoint):
 
 ```bash
-python -m dittli_tts.infer --lang DE --checkpoint G_de.pth \
+python -m dittli_tts.inference.engine --lang DE --checkpoint G_de.pth \
     --text "Guten Morgen, wie geht es dir?"
 ```
 
@@ -88,6 +88,6 @@ python scripts/finetune_de.py \
 
 ## License
 
-Dittli TTS additions © 2026 Dittli TTS contributors, [Apache 2.0](LICENSE).
+Dittli TTS additions © 2026 Dittli TTS contributors, [Apache 2.0](./LICENSE).
 
-Original TinyTTS © 2025 tronghieuit, Apache 2.0. See [NOTICE](NOTICE).
+Original TinyTTS © 2025 tronghieuit, Apache 2.0. See [NOTICE](./NOTICE).

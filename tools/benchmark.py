@@ -47,7 +47,7 @@ def bench(name, fn_warmup, fn_run, get_audio_path):
 
 # ── 1. DittliTTS (PyTorch) ──────────────────────────────────────────────────────
 print("\n[1] DittliTTS (PyTorch)...")
-from dittli_tts.infer import load_engine, synthesize
+from dittli_tts.inference.engine import load_engine, synthesize
 
 tiny_model = load_engine("G_150000.pth", device="cpu")
 results["DittliTTS (PyTorch)"] = bench(

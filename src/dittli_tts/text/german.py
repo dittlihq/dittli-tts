@@ -4,7 +4,7 @@ Public API mirrors dittli_tts.text.english:
     grapheme_to_phoneme(text)  -> (phones, tones, word2ph)
     normalize_text(text)       -> str
 
-The JS port (npm-package/g2p_de.js) is a 1:1 translation of this file. The
+The JS port (src/node/g2p_de.js) is a 1:1 translation of this file. The
 RULES table and EXCEPTION_DICT below are the source of truth — they are
 emitted as JSON (scripts/gen_de_rules.py) so both implementations can stay
 in sync.

@@ -1,6 +1,6 @@
-"""Emit npm-package/g2p_de_rules.json from the Python German G2P module.
+"""Emit src/node/g2p_de_rules.json from the Python German G2P module.
 
-The JS port (npm-package/g2p_de.js) reads this JSON so it cannot drift from
+The JS port (src/node/g2p_de.js) reads this JSON so it cannot drift from
 the Python source of truth. Re-run after every edit to german.py /
 abbreviations.py / number_norm.py.
 
@@ -16,7 +16,7 @@ import sys
 import types
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, "src"))
 
 
 def _install_pkg_shim(name: str, dir_path: str) -> None:
@@ -28,7 +28,7 @@ def _install_pkg_shim(name: str, dir_path: str) -> None:
     sys.modules[name] = pkg
 
 
-_install_pkg_shim("dittli_tts", os.path.join(ROOT, "dittli_tts"))
+_install_pkg_shim("dittli_tts", os.path.join(ROOT, "src", "dittli_tts"))
 
 from dittli_tts.text import german as g  # noqa: E402
 from dittli_tts.text.german_utils.abbreviations import _ABBREVIATIONS  # noqa: E402
@@ -67,6 +67,6 @@ def main(out_path: str) -> None:
 
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-        ROOT, "npm-package", "g2p_de_rules.json"
+        ROOT, "src", "node", "g2p_de_rules.json"
     )
     main(out)

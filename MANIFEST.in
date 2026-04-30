@@ -2,6 +2,6 @@ include README.md
 include LICENSE
 include NOTICE
 include dittli_tts.jpg
-recursive-include text *.rep *.pickle
+recursive-include src/dittli_tts/text *.rep *.pickle
 recursive-include checkpoints *.pth
-recursive-include text/english_utils *.py
+recursive-include src/dittli_tts/text/english_utils *.py

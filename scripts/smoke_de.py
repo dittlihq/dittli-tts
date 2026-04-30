@@ -23,7 +23,7 @@ import sys
 import torch
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, REPO_ROOT)
+sys.path.insert(0, os.path.join(REPO_ROOT, "src"))
 
 from dittli_tts.audio import (
     commons_extract,
@@ -31,7 +31,7 @@ from dittli_tts.audio import (
     spec_to_mel_torch,
 )
 from dittli_tts.data.dataset import ThorstenDataset, collate, compute_and_cache
-from dittli_tts.losses import (
+from dittli_tts.training.losses import (
     discriminator_loss,
     feature_matching_loss,
     generator_loss,

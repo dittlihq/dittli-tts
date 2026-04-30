@@ -18,7 +18,7 @@ _TMP_WAV = os.path.join(tempfile.gettempdir(), "_dittli_bench.wav")
 
 
 def bench_pytorch(ckpt: str, device: str = "cpu"):
-    from dittli_tts.infer import load_engine, synthesize
+    from dittli_tts.inference.engine import load_engine, synthesize
     from dittli_tts.utils.config import SAMPLING_RATE
 
     model = load_engine(ckpt, device=device)
@@ -38,7 +38,7 @@ def bench_pytorch(ckpt: str, device: str = "cpu"):
 
 
 def bench_onnx(onnx_dir: str, use_gpu: bool = False):
-    from dittli_tts.infer_onnx import OnnxDittliTTS
+    from dittli_tts.inference.onnx import OnnxDittliTTS
     from dittli_tts.utils.config import SAMPLING_RATE
 
     engine = OnnxDittliTTS(onnx_dir=onnx_dir, use_gpu=use_gpu)
@@ -87,7 +87,7 @@ def main():
     pt_times, sr = bench_pytorch(args.checkpoint, device=args.device)
 
     # Measure audio length from a real run
-    from dittli_tts.infer import load_engine, synthesize
+    from dittli_tts.inference.engine import load_engine, synthesize
     model = load_engine(args.checkpoint, device=args.device)
     synthesize(TEXT, _TMP_WAV, model, speaker="female", device=args.device)
     audio_data, _ = sf.read(_TMP_WAV)

@@ -20,7 +20,7 @@ from dittli_tts.audio import (
     spec_to_mel_torch,
 )
 from dittli_tts.data.dataset import ThorstenDataset, collate
-from dittli_tts.losses import (
+from dittli_tts.training.losses import (
     discriminator_loss,
     feature_matching_loss,
     generator_loss,

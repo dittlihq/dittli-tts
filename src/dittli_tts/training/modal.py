@@ -4,9 +4,9 @@ One-time setup (locally):
     pip install modal
     modal token new
 
-Run training:
-    modal run --detach modal_train.py                  # full run on A10G
-    modal run modal_train.py --max-steps 200           # quick smoke
+Run training (from the repo root):
+    modal run --detach src/dittli_tts/training/modal.py                  # full run on A10G
+    modal run src/dittli_tts/training/modal.py --max-steps 200           # quick smoke
 
 Reconnect / inspect a detached run:
     modal app logs dittli-de-train

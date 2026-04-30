@@ -1,20 +1,16 @@
 """Export DittliTTS to ONNX and write the model metadata sidecar JSON.
 
 Run from the repo root:
-    python export_onnx.py --checkpoint checkpoints/G.pth \
+    python -m dittli_tts.inference.export --checkpoint checkpoints/G.pth \
         --out models/dittli.onnx --lang EN
 """
 import argparse
 import json
 import os
-import sys
 
 import torch
 
-REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, REPO_ROOT)
-
-from dittli_tts.infer import load_engine
+from dittli_tts.inference.engine import load_engine
 from dittli_tts.text.symbols import (
     language_id_map,
     language_tone_start_map,
@@ -23,6 +19,8 @@ from dittli_tts.text.symbols import (
     symbols as new_symbols,
 )
 from dittli_tts.utils.config import SAMPLING_RATE
+
+REPO_ROOT = os.getcwd()
 
 
 def _resolve_symbols(lang: str) -> list[str]:

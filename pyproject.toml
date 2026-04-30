@@ -35,10 +35,10 @@ dev = [
 ]
 
 [project.scripts]
-dittli-tts = "dittli_tts.infer:main"
+dittli-tts = "dittli_tts.inference.engine:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["dittli_tts*"]
 
 [tool.ruff]
@@ -49,20 +49,20 @@ line-length = 120
 select = ["E", "F", "I", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
-"benchmark.py" = ["E402", "E501", "E702", "I001"]
-"benchmark_onnx.py" = ["E402", "E501"]
-"app.py" = ["E402", "E501"]
-"export_onnx.py" = ["E402"]
-"modal_train.py" = ["E402"]
+"tools/benchmark.py" = ["E402", "E501", "E702", "I001"]
+"tools/benchmark_onnx.py" = ["E402", "E501"]
+"tools/app.py" = ["E402", "E501"]
+"src/dittli_tts/inference/export.py" = ["E402"]
+"src/dittli_tts/training/modal.py" = ["E402"]
 "scripts/*.py" = ["E402"]
-"dittli_tts/text/__init__.py" = ["F403", "F405"]
-"dittli_tts/utils/__init__.py" = ["I001"]
-"dittli_tts/text/english.py" = ["E402"]
-"dittli_tts/text/symbols.py" = ["E501"]
-"dittli_tts/infer.py" = ["E501"]
-"dittli_tts/losses.py" = ["E741"]
-"dittli_tts/nn/modules.py" = ["E741"]
-"dittli_tts/nn/transforms.py" = ["E741"]
+"src/dittli_tts/text/__init__.py" = ["F403", "F405"]
+"src/dittli_tts/utils/__init__.py" = ["I001"]
+"src/dittli_tts/text/english.py" = ["E402"]
+"src/dittli_tts/text/symbols.py" = ["E501"]
+"src/dittli_tts/inference/engine.py" = ["E501"]
+"src/dittli_tts/training/losses.py" = ["E741"]
+"src/dittli_tts/nn/modules.py" = ["E741"]
+"src/dittli_tts/nn/transforms.py" = ["E741"]
 
 [tool.ruff.format]
 quote-style = "double"

@@ -4,7 +4,7 @@
  */
 const path = require('path');
 const { graphemeToPhonemeDE } = require(
-  path.join(__dirname, '..', 'npm-package', 'g2p_de.js')
+  path.join(__dirname, '..', 'src', 'node', 'g2p_de.js')
 );
 
 let buf = '';

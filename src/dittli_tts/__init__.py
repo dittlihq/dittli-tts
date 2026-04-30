@@ -3,7 +3,7 @@ import os
 import soundfile as sf
 import torch
 
-from dittli_tts.infer import load_engine
+from dittli_tts.inference.engine import load_engine
 from dittli_tts.models.synthesizer import VoiceSynthesizer as VoiceSynthesizer
 from dittli_tts.nn import commons
 from dittli_tts.text import phonemes_to_ids

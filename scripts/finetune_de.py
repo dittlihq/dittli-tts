@@ -26,10 +26,10 @@ import sys
 import torch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, "src"))
 
 from dittli_tts.text.symbols import symbols as new_symbols
-from dittli_tts.train import Trainer, TrainerConfig
+from dittli_tts.training.trainer import Trainer, TrainerConfig
 from dittli_tts.utils.remap_checkpoint import (
     load_old_symbols,
     remap_state_dict,

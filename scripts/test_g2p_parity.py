@@ -16,7 +16,7 @@ import sys
 import types
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, "src"))
 
 
 def _install_pkg_shim(name: str, dir_path: str) -> None:
@@ -27,7 +27,7 @@ def _install_pkg_shim(name: str, dir_path: str) -> None:
     sys.modules[name] = pkg
 
 
-_install_pkg_shim("dittli_tts", os.path.join(ROOT, "dittli_tts"))
+_install_pkg_shim("dittli_tts", os.path.join(ROOT, "src", "dittli_tts"))
 
 from dittli_tts.text import german as g  # noqa: E402
 

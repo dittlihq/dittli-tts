@@ -253,22 +253,21 @@ After training:
 
 ```bash
 # 1. Synthesize directly from PyTorch
-python -m dittli_tts.infer \
+python -m dittli_tts.inference.engine \
     --lang DE \
     --checkpoint checkpoints_de/G_final.pth \
     --text "Guten Morgen, wie geht es dir heute?" \
     --output morgen.wav --device cuda
 
 # 2. Export to ONNX (FP32 ~6 MB, FP16 ~3 MB) + sidecar JSON
-python export_onnx.py \
+python -m dittli_tts.inference.export \
     --checkpoint checkpoints_de/G_final.pth \
     --lang DE \
     --out models/dittli-de.onnx
 
-# 3. Run via the npm-package (no Python at all)
-cd npm-package
-node bin/cli.js "Guten Morgen, wie geht es dir?" \
-    --model ../models/dittli-de.onnx -o de.wav
+# 3. Run via the npm package (no Python at all)
+node src/node/bin/cli.js "Guten Morgen, wie geht es dir?" \
+    --model models/dittli-de.onnx -o de.wav
 ```
 
 The third step is the canonical browser/Node.js inference path that
