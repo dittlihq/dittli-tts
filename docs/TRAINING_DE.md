@@ -20,8 +20,7 @@ python -m dittli_tts.data.preprocess \
     --wavs-dir data/thorsten/wavs
 
 # 4. Smoke test (CPU is fine, ~30 s)
-python scripts/smoke_de.py --metadata data/thorsten/metadata.csv \
-    --wavs-dir data/thorsten/wavs
+pytest -m slow tests/slow/test_training_smoke.py
 
 # 5. Real training run (GPU)
 python scripts/finetune_de.py \
@@ -82,10 +81,7 @@ session.
     --wavs-dir data/thorsten/wavs
 
 # Cell 4 — sanity check (a few seconds on GPU)
-!python scripts/smoke_de.py \
-    --metadata data/thorsten/metadata.csv \
-    --wavs-dir data/thorsten/wavs \
-    --device cuda
+!pytest -m slow tests/slow/test_training_smoke.py
 
 # Cell 5 — actual training. Save to /kaggle/working so it persists.
 !mkdir -p /kaggle/working/checkpoints_de

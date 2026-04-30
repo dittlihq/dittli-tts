@@ -47,9 +47,20 @@
     "wavefile": "^11.0.0"
   },
   "scripts": {
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
-    "lint:migrate": "npx @biomejs/biome migrate --write"
+    "test": "pytest",
+    "test:unit": "pytest tests/unit",
+    "test:parity": "pytest tests/parity",
+    "test:integration": "pytest tests/integration",
+    "test:slow": "pytest -m slow",
+    "test:all": "pytest -m ''",
+    "lint": "biome check . && ruff check . && ruff format --check .",
+    "lint:fix": "biome check --write . && ruff check --fix . && ruff format .",
+    "lint:js": "biome check .",
+    "lint:py": "ruff check . && ruff format --check .",
+    "lint:migrate": "npx @biomejs/biome migrate --write",
+    "g2p:gen": "python scripts/gen_de_rules.py",
+    "g2p:metadata": "python scripts/gen_metadata.py",
+    "export:onnx": "python -m dittli_tts.inference.export"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.13"

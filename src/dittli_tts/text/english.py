@@ -2,12 +2,37 @@ import os
 import pickle
 import re
 
-from g2p_en import G2p
+import nltk
 
-from . import symbols
-from .english_utils.abbreviations import expand_abbreviations
-from .english_utils.number_norm import normalize_numbers
-from .english_utils.time_norm import expand_time_english
+# nltk>=3.9 renamed the perceptron tagger to a language-specific resource
+# ('averaged_perceptron_tagger_eng'). g2p_en still auto-downloads the old
+# name but not the new one, so a fresh checkout on a recent nltk install
+# fails inside g2p_en's pos_tag(). Mirror g2p_en's own pattern: try the
+# resource, download silently if missing, and let the LookupError surface
+# at call time only if the machine genuinely has no network.
+try:
+    nltk.data.find("taggers/averaged_perceptron_tagger_eng")
+except LookupError:
+    try:
+        nltk.download("averaged_perceptron_tagger_eng", quiet=True)
+    except Exception:
+        # Offline sandbox / no network — synthesize() will surface a clear
+        # LookupError when it actually needs the tagger.
+        pass
+
+from g2p_en import G2p  # noqa: E402
+
+from . import symbols  # noqa: E402
+from .english_utils.abbreviations import expand_abbreviations  # noqa: E402
+from .english_utils.number_norm import normalize_numbers  # noqa: E402
+from .english_utils.time_norm import expand_time_english  # noqa: E402
+
+# Words (\w+) or single punctuation/symbol characters. Replaces a previous
+# dependency on bert-base-uncased's WordPiece tokenizer, which forced a
+# transformers + HF Hub network fetch on every English G2P import. The
+# tokenizer's output only fed `word2ph`, which is unused downstream
+# (BERT features are zero-filled in both training and inference).
+_TOKEN_RE = re.compile(r"\w+|[^\w\s]", re.UNICODE)
 
 
 def distribute_phone(n_phone, n_word):
@@ -21,8 +46,6 @@ def distribute_phone(n_phone, n_word):
         phones_per_word[chosen_index] += 1
     return phones_per_word
 
-
-from transformers import AutoTokenizer
 
 current_file_path = os.path.dirname(__file__)
 CMU_DICT_PATH = os.path.join(current_file_path, "cmudict.rep")
@@ -125,19 +148,10 @@ def normalize_text(text):
     return text
 
 
-model_id = 'bert-base-uncased'
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-
-
 def grapheme_to_phoneme(text, pad_start_end=True, tokenized=None):
     if tokenized is None:
-        tokenized = tokenizer.tokenize(text)
-    ph_groups = []
-    for t in tokenized:
-        if not t.startswith("#"):
-            ph_groups.append([t])
-        else:
-            ph_groups[-1].append(t.replace("#", ""))
+        tokenized = _TOKEN_RE.findall(text)
+    ph_groups = [[t] for t in tokenized]
 
     phones = []
     tones = []

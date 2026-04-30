@@ -20,7 +20,6 @@ dependencies = [
     "soundfile",
     "g2p-en",
     "nltk",
-    "transformers",
     "numba",
 ]
 
@@ -68,3 +67,17 @@ select = ["E", "F", "I", "UP"]
 quote-style = "double"
 
 [tool.ty]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not slow' -ra --strict-markers --strict-config"
+markers = [
+    "slow: requires the Thorsten dataset on disk (skipped by default)",
+    "gpu: requires CUDA",
+    "node: requires Node.js + onnxruntime-node",
+    "onnx: requires an exported ONNX model",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::FutureWarning",
+]
