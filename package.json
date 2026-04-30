@@ -1,6 +1,6 @@
 {
   "name": "dittli-tts",
-  "version": "5.0.1",
+  "version": "0.1.0",
   "description": "Ultra-lightweight text-to-speech (1.6M params). Pure Node.js inference via ONNX Runtime — zero Python dependency.",
   "main": "src/node/index.js",
   "types": "src/node/index.d.ts",
