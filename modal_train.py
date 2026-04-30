@@ -35,7 +35,7 @@ VOLUME_NAME = "dittli-de"
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("git", "curl", "ffmpeg", "unzip")
-    .pip_install_from_requirements("requirements.txt")
+    .uv_sync()
     .add_local_dir(
         ".",
         remote_path="/root/dittli-tts",

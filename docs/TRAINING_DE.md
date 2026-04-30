@@ -7,8 +7,8 @@ tests before committing to the full run are highly recommended.
 ## TL;DR
 
 ```bash
-# 1. Install training deps + audio tools
-pip install -r requirements.txt
+# 1. Install training deps + audio tools (uv sync uses pyproject.toml + uv.lock)
+uv sync
 sudo apt-get install -y ffmpeg sox
 
 # 2. Pull the Thorsten dataset (~3.7 GB) and the English warm-start checkpoint
@@ -69,10 +69,9 @@ session.
 
 ```python
 # Cell 1 — clone and install
-!git clone https://github.com/brio1009/dittli-tts.git
+!git clone https://github.com/dittlihq/dittli-tts.git
 %cd dittli-tts
-!git checkout claude/german-implementation-progress-15W8v
-!pip install -q -r requirements.txt
+!pip install -q uv && uv sync
 
 # Cell 2 — fetch dataset + warm-start checkpoint
 !bash scripts/setup_de_data.sh
@@ -119,10 +118,9 @@ Tips:
 3. Pick a `pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime` template, 50 GB disk.
 4. SSH in, then:
    ```bash
-   git clone https://github.com/brio1009/dittli-tts.git
+   git clone https://github.com/dittlihq/dittli-tts.git
    cd dittli-tts
-   git checkout claude/german-implementation-progress-15W8v   # or wherever the German branch lives
-   pip install -r requirements.txt
+   pip install uv && uv sync
    bash scripts/setup_de_data.sh
    python -m dittli_tts.data.preprocess \
        --metadata data/thorsten/metadata.csv \
@@ -155,9 +153,9 @@ import modal
 image = (
     modal.Image.debian_slim()
     .apt_install("git", "ffmpeg")
-    .pip_install_from_requirements("requirements.txt")
+    .uv_sync()
     .run_commands(
-        "git clone https://github.com/brio1009/dittli-tts.git /root/dittli-tts",
+        "git clone https://github.com/dittlihq/dittli-tts.git /root/dittli-tts",
     )
 )
 volume = modal.Volume.from_name("dittli-de", create_if_missing=True)
@@ -206,10 +204,9 @@ you can still get partial results in 12 h sessions.
 Open a fresh Colab notebook with GPU runtime, then:
 
 ```python
-!git clone https://github.com/brio1009/dittli-tts.git
+!git clone https://github.com/dittlihq/dittli-tts.git
 %cd dittli-tts
-!git checkout claude/german-implementation-progress-15W8v
-!pip install -q -r requirements.txt
+!pip install -q uv && uv sync
 !bash scripts/setup_de_data.sh
 !python -m dittli_tts.data.preprocess \
     --metadata data/thorsten/metadata.csv \
