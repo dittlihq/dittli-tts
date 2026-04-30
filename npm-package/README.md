@@ -116,7 +116,6 @@ Apache License 2.0
 
 ## Links
 
-- **GitHub**: [github.com/tronghieuit/dittli-tts](https://github.com/tronghieuit/dittli-tts)
+- **GitHub**: [github.com/dittlihq/dittli-tts](https://github.com/dittlihq/dittli-tts)
 - **PyPI**: [pypi.org/project/dittli-tts](https://pypi.org/project/dittli-tts/)
 - **npm**: [npmjs.com/package/dittli-tts](https://www.npmjs.com/package/dittli-tts)
-- **Demo**: [huggingface.co/spaces/backtracking/dittli-tts-demo](https://huggingface.co/spaces/backtracking/dittli-tts-demo)

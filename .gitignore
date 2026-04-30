@@ -71,7 +71,7 @@ venv.bak/
 *.pth
 *.onnx
 
-# Third-party model weights (top-level models/ dir; tiny_tts/models/ is source).
+# Third-party model weights (top-level models/ dir; dittli_tts/models/ is source).
 # Ignore everything in models/ except the metadata sidecar JSONs.
 /models/*
 !/models/*.json
@@ -92,7 +92,7 @@ push_hf.py
 bench_wn.py
 bench_new.py
 bench_onnx.py
-profile_tiny.py
+profile_dittli.py
 verify_speed_claims.py
 get_params.py
 get_supertonic_sample.py

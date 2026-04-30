@@ -1,5 +1,7 @@
 include README.md
-include TinyTTS.png
+include LICENSE
+include NOTICE
+include dittli_tts.jpg
 recursive-include text *.rep *.pickle
 recursive-include checkpoints *.pth
 recursive-include text/english_utils *.py

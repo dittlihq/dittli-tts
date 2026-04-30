@@ -132,7 +132,7 @@ def get_latest_checkpoint(checkpoint_dir):
 def main():
     parser = argparse.ArgumentParser(description="DittliTTS — English Text-to-Speech Inference")
     parser.add_argument("--text", "-t", type=str, default="The weather is nice today, and I feel very relaxed.", help="Text to synthesize")
-    parser.add_argument("--checkpoint", "-c", type=str, default=None, help="Path to checkpoint. Auto-downloads if not provided.")
+    parser.add_argument("--checkpoint", "-c", type=str, required=True, help="Path to checkpoint .pth file or directory")
     parser.add_argument("--output", "-o", type=str, default="output.wav", help="Output audio file path")
     parser.add_argument("--speaker", "-s", type=str, default="MALE", help="Speaker ID")
     parser.add_argument("--speed", type=float, default=1.0, help="Speech speed (1.0=normal, 1.5=faster, 0.7=slower)")
@@ -140,18 +140,6 @@ def main():
     parser.add_argument("--lang", type=str, default="EN", help="Language code: EN or DE")
 
     args = parser.parse_args()
-
-    if args.checkpoint is None:
-        try:
-            from huggingface_hub import hf_hub_download
-            print("Downloading/Loading checkpoint from Hugging Face Hub (backtracking/tiny-tts)...")
-            args.checkpoint = hf_hub_download(repo_id="backtracking/tiny-tts", filename="G.pth")
-        except ImportError:
-            print("Error: huggingface_hub is required for auto-download. Run: pip install huggingface_hub")
-            sys.exit(1)
-        except Exception as e:
-            print(f"Error downloading checkpoint: {e}")
-            sys.exit(1)
 
     if not os.path.exists(args.checkpoint):
         print(f"Error: Checkpoint or directory not found at {args.checkpoint}")

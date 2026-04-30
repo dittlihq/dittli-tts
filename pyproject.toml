@@ -19,12 +19,15 @@ dependencies = [
     "torchaudio>=2.0",
     "soundfile",
     "g2p-en",
+    "nltk",
     "transformers",
     "numba",
-    "huggingface_hub",
 ]
 
 [project.optional-dependencies]
+demo = [
+    "gradio",
+]
 dev = [
     "pytest",
     "ruff",

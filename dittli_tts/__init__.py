@@ -17,31 +17,15 @@ from dittli_tts.utils.config import (
 
 
 class DittliTTS:
-    def __init__(self, checkpoint_path=None, device=None):
+    def __init__(self, checkpoint_path, device=None):
         if device is None:
             self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         else:
             self.device = device
-            
-        if checkpoint_path is None:
-            # Look for default checkpoint in package
-            pkg_dir = os.path.dirname(os.path.abspath(__file__))
-            default_ckpt = os.path.join(os.path.dirname(pkg_dir), "checkpoints", "G.pth")
-            # 2. Check HuggingFace Cache / Download
-            if not os.path.exists(default_ckpt):
-                try:
-                    from huggingface_hub import hf_hub_download
-                    print("Downloading/Loading checkpoint from Hugging Face Hub (backtracking/tiny-tts)...")
-                    default_ckpt = hf_hub_download(repo_id="backtracking/tiny-tts", filename="G.pth")
-                except ImportError:
-                    raise ImportError(
-                        "huggingface_hub is required to auto-download the model. Run: pip install huggingface_hub"
-                    )
-                except Exception as e:
-                    raise ValueError(f"Failed to download checkpoint from Hugging Face: {e}")
 
-            checkpoint_path = default_ckpt
-                
+        if not os.path.exists(checkpoint_path):
+            raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")
+
         self.model = load_engine(checkpoint_path, self.device)
 
     def speak(self, text, output_path="output.wav", speaker="MALE", speed=1.0):
