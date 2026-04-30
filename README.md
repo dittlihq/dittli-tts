@@ -70,7 +70,7 @@ python -m dittli_tts.infer --lang DE --checkpoint G_de.pth \
 
 ## Training
 
-See [TRAINING_DE.md](TRAINING_DE.md) for the full cloud training guide (Modal, Kaggle, Vast.ai).
+See [docs/TRAINING_DE.md](docs/TRAINING_DE.md) for the full cloud training guide (Modal, Kaggle, Vast.ai).
 
 Quick start:
 
