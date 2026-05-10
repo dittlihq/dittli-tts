@@ -3,12 +3,12 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tiny-tts"
+name = "dittli-tts"
 version = "0.1.0"
-description = "Ultra-lightweight English text-to-speech model (~9M params, ~20MB)"
+description = "Lightweight browser-first TTS with English and German support (~1.6M params)"
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
@@ -19,21 +19,65 @@ dependencies = [
     "torchaudio>=2.0",
     "soundfile",
     "g2p-en",
-    "transformers",
+    "nltk",
     "numba",
-    "huggingface_hub",
 ]
 
 [project.optional-dependencies]
+demo = [
+    "gradio",
+]
 dev = [
     "pytest",
-    "black",
-    "flake8",
+    "ruff",
+    "ty",
 ]
 
 [project.scripts]
-tiny-tts = "tiny_tts.infer:main"
+dittli-tts = "dittli_tts.inference.engine:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["tiny_tts*"]
+where = ["src"]
+include = ["dittli_tts*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"tools/benchmark.py" = ["E402", "E501", "E702", "I001"]
+"tools/benchmark_onnx.py" = ["E402", "E501"]
+"tools/app.py" = ["E402", "E501"]
+"src/dittli_tts/inference/export.py" = ["E402"]
+"src/dittli_tts/training/modal.py" = ["E402"]
+"scripts/*.py" = ["E402"]
+"src/dittli_tts/text/__init__.py" = ["F403", "F405"]
+"src/dittli_tts/utils/__init__.py" = ["I001"]
+"src/dittli_tts/text/english.py" = ["E402"]
+"src/dittli_tts/text/symbols.py" = ["E501"]
+"src/dittli_tts/inference/engine.py" = ["E501"]
+"src/dittli_tts/training/losses.py" = ["E741"]
+"src/dittli_tts/nn/modules.py" = ["E741"]
+"src/dittli_tts/nn/transforms.py" = ["E741"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ty]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not slow' -ra --strict-markers --strict-config"
+markers = [
+    "slow: requires the Thorsten dataset on disk (skipped by default)",
+    "gpu: requires CUDA",
+    "node: requires Node.js + onnxruntime-node",
+    "onnx: requires an exported ONNX model",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::FutureWarning",
+]

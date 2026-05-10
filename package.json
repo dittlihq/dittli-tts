@@ -1,0 +1,48 @@
+{
+  "name": "dittli-tts",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "description": "Monorepo for DittliTTS — ultra-lightweight Node.js + Python TTS.",
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "speech-synthesis",
+    "onnx",
+    "lightweight",
+    "node-tts",
+    "edge-tts",
+    "offline-tts"
+  ],
+  "author": "Dittli TTS Contributors",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dittlihq/dittli-tts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dittlihq/dittli-tts/issues"
+  },
+  "homepage": "https://github.com/dittlihq/dittli-tts#readme",
+  "scripts": {
+    "test": "pytest",
+    "test:unit": "pytest tests/unit",
+    "test:parity": "pytest tests/parity",
+    "test:integration": "pytest tests/integration",
+    "test:slow": "pytest -m slow",
+    "test:all": "pytest -m ''",
+    "lint": "biome check . && ruff check . && ruff format --check .",
+    "lint:fix": "biome check --write . && ruff check --fix . && ruff format .",
+    "lint:js": "biome check .",
+    "lint:py": "ruff check . && ruff format --check .",
+    "lint:migrate": "npx @biomejs/biome migrate --write",
+    "g2p:gen": "python scripts/gen_de_rules.py",
+    "g2p:metadata": "python scripts/gen_metadata.py",
+    "export:onnx": "python -m dittli_tts.inference.export"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.13"
+  }
+}
