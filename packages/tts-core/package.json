@@ -1,6 +1,6 @@
 {
   "name": "@dittli/tts-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DittliTTS inference engine — pure Node.js ONNX runtime. Install a language package (@dittli/tts-en, @dittli/tts-de) alongside this to synthesise speech.",
   "main": "src/index.js",
   "types": "src/index.d.ts",

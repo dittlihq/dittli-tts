@@ -169,7 +169,7 @@ def main():
         fp16_path = args.out.replace(".onnx", "_fp16.onnx")
         quant_pre_process(args.out, pre_path, skip_symbolic_shape=True)
         m = load_model(pre_path)
-        m16 = convert_float_to_float16(m)
+        m16 = convert_float_to_float16(m, keep_io_types=True)
         save_model(m16, fp16_path)
         print(f"FP16 size: {os.path.getsize(fp16_path) / (1024 * 1024):.2f} MB")
     except ImportError as e:

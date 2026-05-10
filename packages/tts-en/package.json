@@ -1,6 +1,6 @@
 {
   "name": "@dittli/tts-en",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DittliTTS English language pack — G2P + model metadata for @dittli/tts-core.",
   "main": "src/index.js",
   "files": [
@@ -9,8 +9,12 @@
     "src/g2p_predict.js",
     "src/cmudict.json",
     "src/g2p_model.json",
-    "metadata/dittli-en.json"
+    "metadata/dittli-en.json",
+    "model/dittli-en_fp16.onnx"
   ],
+  "scripts": {
+    "prepublishOnly": "node ../../scripts/check-publish-assets.js tts-en"
+  },
   "keywords": [
     "tts",
     "text-to-speech",
@@ -33,6 +37,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@dittli/tts-core": "0.1.0"
+    "@dittli/tts-core": "0.1.1"
   }
 }

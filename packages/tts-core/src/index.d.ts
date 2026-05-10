@@ -13,11 +13,13 @@ declare class DittliTTS {
   constructor(options?: {
     modelPath?: string;
     metadataPath?: string;
+    language?: string;
     device?: "cpu" | "gpu";
   });
 
   static registerLanguage(lang: string, g2pFn: (text: string, opts?: object) => { phones: string[]; tones: number[] }): void;
-  static _defaultMetadataPath: string | null;
+  static registerDefaultMetadata(lang: string, metadataPath: string): void;
+  static registerDefaultModel(lang: string, modelPath: string): void;
 
   metadata: ModelMetadata | null;
 

@@ -18,6 +18,7 @@ const path = require("node:path");
 
 const G2P_BY_LANG = {};
 const DEFAULT_METADATA_BY_LANG = {};
+const DEFAULT_MODEL_BY_LANG = {};
 
 function _loadMetadata(metadataPath) {
   const raw = fs.readFileSync(metadataPath, "utf-8");
@@ -66,13 +67,33 @@ class DittliTTS {
     DEFAULT_METADATA_BY_LANG[lang] = metadataPath;
   }
 
+  static registerDefaultModel(lang, modelPath) {
+    DEFAULT_MODEL_BY_LANG[lang] = modelPath;
+  }
+
   async init() {
     if (this._initialized) return;
 
-    const modelPath = this.modelPath;
+    let modelPath = this.modelPath;
+    if (!modelPath) {
+      if (this.language && DEFAULT_MODEL_BY_LANG[this.language]
+          && fs.existsSync(DEFAULT_MODEL_BY_LANG[this.language])) {
+        modelPath = DEFAULT_MODEL_BY_LANG[this.language];
+      } else {
+        const registered = Object.keys(DEFAULT_MODEL_BY_LANG);
+        if (registered.length === 1) {
+          const p = DEFAULT_MODEL_BY_LANG[registered[0]];
+          if (fs.existsSync(p)) modelPath = p;
+        }
+      }
+    }
     if (!modelPath) {
       throw new Error(
-        "No modelPath provided. Download the ONNX model and pass { modelPath: '/path/to/dittli.onnx' }.",
+        "No modelPath provided and no language pack supplied a default. " +
+          "Install a language pack (e.g. @dittli/tts-en) or pass { modelPath }." +
+          (Object.keys(DEFAULT_MODEL_BY_LANG).length > 1
+            ? ` Loaded packs: ${Object.keys(DEFAULT_MODEL_BY_LANG).join(", ")} — pass { language: 'en' } to disambiguate.`
+            : ""),
       );
     }
     if (!fs.existsSync(modelPath)) throw new Error(`Model not found: ${modelPath}`);

@@ -115,6 +115,7 @@
     "w",
     "x",
     "y",
+    "yː",
     "z",
     "zh",
     "zy",
@@ -224,7 +225,7 @@
     "SP",
     "UNK"
   ],
-  "phoneme_set": "english_v1",
+  "phoneme_set": "en_v1",
   "n_speakers": 1,
   "spk2id": {
     "MALE": 0

@@ -1,14 +1,18 @@
 {
   "name": "@dittli/tts-de",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DittliTTS German language pack — G2P + model metadata for @dittli/tts-core.",
   "main": "src/index.js",
   "files": [
     "src/index.js",
     "src/g2p_de.js",
     "src/g2p_de_rules.json",
-    "metadata/dittli-de.json"
+    "metadata/dittli-de.json",
+    "model/dittli-de_fp16.onnx"
   ],
+  "scripts": {
+    "prepublishOnly": "node ../../scripts/check-publish-assets.js tts-de"
+  },
   "keywords": [
     "tts",
     "text-to-speech",
@@ -32,6 +36,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@dittli/tts-core": "0.1.0"
+    "@dittli/tts-core": "0.1.1"
   }
 }
