@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const MANIFEST = {
-  "tts-core": ["src/index.js", "src/index.d.ts", "bin/cli.js"],
+  "tts-core": ["src/index.js", "src/index.d.ts"],
   "tts-en": [
     "src/index.js",
     "src/g2p_en.js",

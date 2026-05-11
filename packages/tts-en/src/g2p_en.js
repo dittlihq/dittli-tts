@@ -1,29 +1,30 @@
 /**
- * English grapheme-to-phoneme — extracted from the original index.js.
+ * English grapheme-to-phoneme.
  * Mirrors dittli_tts/text/english.py: CMU dictionary lookup with a neural G2P
  * fallback (g2p_predict.js) for OOV words.
+ *
+ * The CMU dict (~5 MB) and neural G2P weights (~4 MB) are fetched lazily on
+ * first use — call `graphemeToPhonemeEN.prepare()` before calling the
+ * function, or let `DittliTTS.init()` do it for you.
  */
-const fs = require("node:fs");
-const path = require("node:path");
-const g2pPredict = require("./g2p_predict");
+
+import { predict as _g2pPredict, prepare as _prepareG2pPredict } from "./g2p_predict.js";
+
+const CMU_URL = new URL("./cmudict.json", import.meta.url);
 
 let _cmu = null;
-const _cmuDictPath = path.join(__dirname, "cmudict.json");
+let _cmuPromise = null;
+
+async function _loadCMU() {
+  const res = await fetch(CMU_URL);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch cmudict.json (${res.status}) from ${CMU_URL}`);
+  }
+  return await res.json();
+}
 
 function _getCMU() {
-  if (_cmu !== null) return _cmu;
-  if (fs.existsSync(_cmuDictPath)) {
-    try {
-      _cmu = JSON.parse(fs.readFileSync(_cmuDictPath, "utf-8"));
-    } catch (e) {
-      console.warn("[DittliTTS] Failed to load cmudict.json:", e.message);
-      _cmu = {};
-    }
-  } else {
-    console.warn("[DittliTTS] cmudict.json missing; English G2P will lean heavily on the neural fallback.");
-    _cmu = {};
-  }
-  return _cmu;
+  return _cmu || {};
 }
 
 function _parsePhone(phn) {
@@ -64,7 +65,7 @@ function _mapPhoneme(ph, symbolSet) {
   return ph;
 }
 
-function graphemeToPhonemeEN(text, opts = {}) {
+export function graphemeToPhonemeEN(text, opts = {}) {
   const { symbolSet = null, padStartEnd = true } = opts;
   text = text.toLowerCase().trim();
   const words = text.split(/\s+/).filter((w) => w.length > 0);
@@ -104,7 +105,7 @@ function graphemeToPhonemeEN(text, opts = {}) {
             partPhones.push(...ph);
             partTones.push(...tn);
           } else {
-            const preds = g2pPredict.predict(part);
+            const preds = _g2pPredict(part);
             if (preds && preds.length > 0) {
               for (const phn of preds) {
                 const [ph2, tn2] = _parsePhone(phn);
@@ -137,7 +138,7 @@ function graphemeToPhonemeEN(text, opts = {}) {
       }
 
       if (!resolved) {
-        const preds = g2pPredict.predict(core);
+        const preds = _g2pPredict(core);
         if (preds && preds.length > 0) {
           const [ph, tn] = _parseSyllables([preds]);
           for (const p of ph) allPhones.push(_mapPhoneme(p, symbolSet));
@@ -172,4 +173,16 @@ function graphemeToPhonemeEN(text, opts = {}) {
   return { phones: allPhones, tones: allTones, word2ph };
 }
 
-module.exports = { graphemeToPhonemeEN };
+graphemeToPhonemeEN.prepare = async function prepare() {
+  await Promise.all([
+    _cmu
+      ? Promise.resolve()
+      : (() => {
+          if (!_cmuPromise) _cmuPromise = _loadCMU();
+          return _cmuPromise.then((d) => {
+            _cmu = d;
+          });
+        })(),
+    _prepareG2pPredict(),
+  ]);
+};

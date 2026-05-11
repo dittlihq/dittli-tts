@@ -1,25 +1,31 @@
 {
   "name": "@dittli/tts-core",
-  "version": "0.1.1",
-  "description": "DittliTTS inference engine — pure Node.js ONNX runtime. Install a language package (@dittli/tts-en, @dittli/tts-de) alongside this to synthesise speech.",
+  "version": "0.2.0",
+  "description": "DittliTTS inference engine for the browser — ONNX Runtime Web. Install a language pack (@dittli/tts-en, @dittli/tts-de) alongside this to synthesise speech.",
+  "type": "module",
   "main": "src/index.js",
+  "module": "src/index.js",
   "types": "src/index.d.ts",
-  "bin": {
-    "dittli-tts": "bin/cli.js"
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    }
   },
   "files": [
     "src/index.js",
-    "src/index.d.ts",
-    "bin/cli.js"
+    "src/index.d.ts"
   ],
   "keywords": [
     "tts",
     "text-to-speech",
     "speech-synthesis",
     "onnx",
+    "onnxruntime-web",
+    "browser",
+    "webassembly",
     "lightweight",
-    "node-tts",
-    "edge-tts",
     "offline-tts"
   ],
   "author": "Dittli TTS Contributors",
@@ -33,12 +39,7 @@
     "url": "https://github.com/dittlihq/dittli-tts/issues"
   },
   "homepage": "https://github.com/dittlihq/dittli-tts#readme",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "dependencies": {
-    "onnxruntime-node": "^1.19.0",
-    "wavefile": "^11.0.0",
-    "commander": "^12.0.0"
+    "onnxruntime-web": "^1.19.0"
   }
 }

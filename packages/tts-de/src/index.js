@@ -1,9 +1,9 @@
-const path = require("node:path");
-const DittliTTS = require("@dittli/tts-core");
-const { graphemeToPhonemeDE } = require("./g2p_de");
+import { DittliTTS } from "@dittli/tts-core";
+import { graphemeToPhonemeDE } from "./g2p_de.js";
 
 DittliTTS.registerLanguage("de", graphemeToPhonemeDE);
-DittliTTS.registerDefaultMetadata("de", path.join(__dirname, "../metadata/dittli-de.json"));
-DittliTTS.registerDefaultModel("de", path.join(__dirname, "../model/dittli-de_fp16.onnx"));
+DittliTTS.registerDefaultMetadata("de", new URL("../metadata/dittli-de.json", import.meta.url));
+DittliTTS.registerDefaultModel("de", new URL("../model/dittli-de_fp16.onnx", import.meta.url));
 
-module.exports = DittliTTS;
+export { DittliTTS };
+export default DittliTTS;

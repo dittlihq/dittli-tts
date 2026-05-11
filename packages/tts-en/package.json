@@ -1,8 +1,16 @@
 {
   "name": "@dittli/tts-en",
-  "version": "0.1.1",
-  "description": "DittliTTS English language pack — G2P + model metadata for @dittli/tts-core.",
+  "version": "0.2.0",
+  "description": "DittliTTS English language pack — G2P + model metadata for @dittli/tts-core. Browser-targeted.",
+  "type": "module",
   "main": "src/index.js",
+  "module": "src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    }
+  },
   "files": [
     "src/index.js",
     "src/g2p_en.js",
@@ -20,6 +28,7 @@
     "text-to-speech",
     "english",
     "g2p",
+    "browser",
     "dittli"
   ],
   "author": "Dittli TTS Contributors",
@@ -33,10 +42,7 @@
     "url": "https://github.com/dittlihq/dittli-tts/issues"
   },
   "homepage": "https://github.com/dittlihq/dittli-tts#readme",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "dependencies": {
-    "@dittli/tts-core": "0.1.1"
+    "@dittli/tts-core": "0.2.0"
   }
 }

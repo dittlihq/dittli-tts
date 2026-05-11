@@ -1,31 +1,49 @@
 /**
- * DittliTTS — Pure Node.js text-to-speech via ONNX Runtime.
+ * DittliTTS — text-to-speech for the browser via ONNX Runtime Web.
  *
- * This package is the inference engine only. Install a language pack to
- * register the G2P implementation for your target language:
+ * This package is the inference engine only. Import a language pack so that
+ * its G2P implementation, default model URL, and default metadata URL are
+ * registered:
  *
- *   require('@dittli/tts-en');  // English
- *   require('@dittli/tts-de');  // German
+ *   import { DittliTTS } from "@dittli/tts-en";
+ *   const tts = new DittliTTS({ language: "en" });
+ *   const wavBytes = await tts.speak("hello");
  *
- * Language packs call DittliTTS.registerLanguage() on load, so simply
- * requiring them is enough — no further setup needed.
+ * The returned bytes are a Uint8Array of a complete WAV file. Wrap in a Blob
+ * to play it back:
+ *
+ *   const url = URL.createObjectURL(new Blob([wavBytes], { type: "audio/wav" }));
+ *   new Audio(url).play();
  */
 
-const ort = require("onnxruntime-node");
-const { WaveFile } = require("wavefile");
-const fs = require("node:fs");
-const path = require("node:path");
+import * as ort from "onnxruntime-web";
 
 const G2P_BY_LANG = {};
 const DEFAULT_METADATA_BY_LANG = {};
 const DEFAULT_MODEL_BY_LANG = {};
 
-function _loadMetadata(metadataPath) {
-  const raw = fs.readFileSync(metadataPath, "utf-8");
-  const meta = JSON.parse(raw);
+function _toUrl(value) {
+  if (value == null) return null;
+  if (value instanceof URL) return value;
+  return new URL(value, typeof window !== "undefined" ? window.location.href : "file:///");
+}
+
+async function _fetchArrayBuffer(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch failed (${res.status}) for ${url}`);
+  return await res.arrayBuffer();
+}
+
+async function _fetchJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch failed (${res.status}) for ${url}`);
+  return await res.json();
+}
+
+function _validateMetadata(meta, source) {
   for (const k of ["language", "language_id", "tone_offset", "sample_rate", "symbols"]) {
     if (meta[k] === undefined) {
-      throw new Error(`metadata sidecar missing field "${k}": ${metadataPath}`);
+      throw new Error(`metadata sidecar missing field "${k}": ${source}`);
     }
   }
   return meta;
@@ -47,103 +65,148 @@ function _insertBlanks(arr) {
   return out;
 }
 
-class DittliTTS {
+/**
+ * Build a WAV file (Float32 → 16-bit PCM) and return its bytes.
+ * Mono only — the engine produces a single channel.
+ */
+function _floatToWav(samples, sampleRate) {
+  const numSamples = samples.length;
+  const headerSize = 44;
+  const dataSize = numSamples * 2;
+  const buf = new ArrayBuffer(headerSize + dataSize);
+  const view = new DataView(buf);
+
+  const writeAscii = (offset, str) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  };
+
+  writeAscii(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeAscii(8, "WAVE");
+  writeAscii(12, "fmt ");
+  view.setUint32(16, 16, true); // fmt chunk size
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // channels
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true); // byte rate (channels * sampleRate * bytesPerSample)
+  view.setUint16(32, 2, true); // block align
+  view.setUint16(34, 16, true); // bits per sample
+  writeAscii(36, "data");
+  view.setUint32(40, dataSize, true);
+
+  let offset = headerSize;
+  for (let i = 0; i < numSamples; i++) {
+    let s = samples[i];
+    if (s > 1) s = 1;
+    else if (s < -1) s = -1;
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    offset += 2;
+  }
+
+  return new Uint8Array(buf);
+}
+
+export class DittliTTS {
   constructor(opts = {}) {
-    this.modelPath = opts.modelPath || null;
-    this.metadataPath = opts.metadataPath || null;
+    this.modelUrl = opts.modelUrl != null ? _toUrl(opts.modelUrl) : null;
+    this.metadataUrl = opts.metadataUrl != null ? _toUrl(opts.metadataUrl) : null;
     this.language = opts.language || null;
-    this.device = opts.device || "cpu";
+    this.executionProviders = opts.executionProviders || ["wasm"];
     this.session = null;
     this.metadata = null;
     this._symbolSet = null;
     this._initialized = false;
+    this._initPromise = null;
   }
 
   static registerLanguage(lang, g2pFn) {
     G2P_BY_LANG[lang] = g2pFn;
   }
 
-  static registerDefaultMetadata(lang, metadataPath) {
-    DEFAULT_METADATA_BY_LANG[lang] = metadataPath;
+  static registerDefaultMetadata(lang, metadataUrl) {
+    DEFAULT_METADATA_BY_LANG[lang] = _toUrl(metadataUrl);
   }
 
-  static registerDefaultModel(lang, modelPath) {
-    DEFAULT_MODEL_BY_LANG[lang] = modelPath;
+  static registerDefaultModel(lang, modelUrl) {
+    DEFAULT_MODEL_BY_LANG[lang] = _toUrl(modelUrl);
   }
 
   async init() {
     if (this._initialized) return;
+    if (this._initPromise) return this._initPromise;
+    this._initPromise = this._init();
+    try {
+      await this._initPromise;
+    } finally {
+      this._initPromise = null;
+    }
+  }
 
-    let modelPath = this.modelPath;
-    if (!modelPath) {
-      if (this.language && DEFAULT_MODEL_BY_LANG[this.language]
-          && fs.existsSync(DEFAULT_MODEL_BY_LANG[this.language])) {
-        modelPath = DEFAULT_MODEL_BY_LANG[this.language];
+  async _init() {
+    let modelUrl = this.modelUrl;
+    if (!modelUrl) {
+      if (this.language && DEFAULT_MODEL_BY_LANG[this.language]) {
+        modelUrl = DEFAULT_MODEL_BY_LANG[this.language];
       } else {
         const registered = Object.keys(DEFAULT_MODEL_BY_LANG);
         if (registered.length === 1) {
-          const p = DEFAULT_MODEL_BY_LANG[registered[0]];
-          if (fs.existsSync(p)) modelPath = p;
+          modelUrl = DEFAULT_MODEL_BY_LANG[registered[0]];
         }
       }
     }
-    if (!modelPath) {
+    if (!modelUrl) {
       throw new Error(
-        "No modelPath provided and no language pack supplied a default. " +
-          "Install a language pack (e.g. @dittli/tts-en) or pass { modelPath }." +
+        "No modelUrl provided and no language pack supplied a default. " +
+          "Import a language pack (e.g. @dittli/tts-en) or pass { modelUrl }." +
           (Object.keys(DEFAULT_MODEL_BY_LANG).length > 1
             ? ` Loaded packs: ${Object.keys(DEFAULT_MODEL_BY_LANG).join(", ")} — pass { language: 'en' } to disambiguate.`
             : ""),
       );
     }
-    if (!fs.existsSync(modelPath)) throw new Error(`Model not found: ${modelPath}`);
 
-    let metadataPath = this.metadataPath;
-    if (!metadataPath) {
-      const guess = modelPath.replace(/\.onnx$/, ".json");
-      if (fs.existsSync(guess)) {
-        metadataPath = guess;
-      } else if (this.language && DEFAULT_METADATA_BY_LANG[this.language]
-                 && fs.existsSync(DEFAULT_METADATA_BY_LANG[this.language])) {
-        metadataPath = DEFAULT_METADATA_BY_LANG[this.language];
+    let metadataUrl = this.metadataUrl;
+    if (!metadataUrl) {
+      if (this.language && DEFAULT_METADATA_BY_LANG[this.language]) {
+        metadataUrl = DEFAULT_METADATA_BY_LANG[this.language];
       } else {
         const registered = Object.keys(DEFAULT_METADATA_BY_LANG);
         if (registered.length === 1) {
-          const p = DEFAULT_METADATA_BY_LANG[registered[0]];
-          if (fs.existsSync(p)) metadataPath = p;
+          metadataUrl = DEFAULT_METADATA_BY_LANG[registered[0]];
         }
       }
-      if (!metadataPath) {
-        throw new Error(
-          "No metadata sidecar found. Provide { metadataPath } or place a JSON file " +
-            `next to ${modelPath} (same basename, .json extension).` +
-            (Object.keys(DEFAULT_METADATA_BY_LANG).length > 1
-              ? " Multiple language packs are loaded — pass { language: 'en' } to disambiguate."
-              : ""),
-        );
-      }
+    }
+    if (!metadataUrl) {
+      throw new Error(
+        "No metadataUrl provided and no language pack supplied a default. " +
+          "Import a language pack or pass { metadataUrl }.",
+      );
     }
 
-    const meta = _loadMetadata(metadataPath);
+    const meta = _validateMetadata(await _fetchJson(metadataUrl), String(metadataUrl));
     const symMap = {};
     for (let i = 0; i < meta.symbols.length; i++) symMap[meta.symbols[i]] = i;
     meta._symbolMap = symMap;
     this._symbolSet = new Set(meta.symbols);
     this.metadata = meta;
 
-    if (!G2P_BY_LANG[meta.language]) {
+    const g2p = G2P_BY_LANG[meta.language];
+    if (!g2p) {
       throw new Error(
         `No G2P registered for language "${meta.language}". ` +
-          `Install the matching language pack: @dittli/tts-${meta.language}`,
+          `Import the matching language pack: @dittli/tts-${meta.language}`,
       );
     }
 
-    console.log(`Loading ONNX model (${meta.language}, ${meta.symbols.length} symbols)...`);
-    this.session = await ort.InferenceSession.create(modelPath, {
-      executionProviders: [this.device === "gpu" ? "cuda" : "cpu"],
+    const modelBytes = new Uint8Array(await _fetchArrayBuffer(modelUrl));
+    this.session = await ort.InferenceSession.create(modelBytes, {
+      executionProviders: this.executionProviders,
     });
+
+    if (typeof g2p.prepare === "function") {
+      await g2p.prepare();
+    }
+
     this._initialized = true;
-    console.log(`Model loaded (${meta.sample_rate} Hz).`);
   }
 
   textToPhonemeIds(text) {
@@ -160,33 +223,18 @@ class DittliTTS {
   async speak(text, options = {}) {
     await this.init();
 
-    let outputPath = "output.wav";
-    let speakerName = null;
-    let speed = 1.0;
-    if (typeof options === "string") {
-      outputPath = options;
-    } else {
-      outputPath = options.output || "output.wav";
-      speakerName = options.speaker || null;
-      speed = options.speed || 1.0;
-    }
+    const speakerName = options.speaker || null;
+    const speed = options.speed || 1.0;
 
     const meta = this.metadata;
     const spk2id = meta.spk2id || {};
     let sidValue = 0;
     if (speakerName && spk2id[speakerName] !== undefined) {
       sidValue = spk2id[speakerName];
-    } else if (speakerName) {
-      console.warn(
-        `[DittliTTS] Unknown speaker "${speakerName}", using ID 0. ` +
-          `Known: ${Object.keys(spk2id).join(", ") || "(none)"}`,
-      );
     }
 
-    console.log("Synthesizing:", text);
     const { phoneIds, toneIds, langIds } = this.textToPhonemeIds(text);
     const seqLen = phoneIds.length;
-    console.log("Phonemes:", seqLen, "tokens");
 
     const feeds = {
       x: new ort.Tensor("int64", BigInt64Array.from(phoneIds.map((v) => BigInt(v))), [1, seqLen]),
@@ -206,26 +254,16 @@ class DittliTTS {
 
     const results = await this.session.run(feeds);
     const audio = results.audio.data;
-
-    const wav = new WaveFile();
-    wav.fromScratch(1, meta.sample_rate, "32f", Array.from(audio));
-    const wavBuf = wav.toBuffer();
-
-    const outDir = path.dirname(outputPath);
-    if (outDir && outDir !== "." && !fs.existsSync(outDir))
-      fs.mkdirSync(outDir, { recursive: true });
-    fs.writeFileSync(outputPath, wavBuf);
-    console.log("Saved:", outputPath, `(${(audio.length / meta.sample_rate).toFixed(2)}s)`);
-    return wavBuf;
+    return _floatToWav(audio, meta.sample_rate);
   }
 
   async dispose() {
     if (this.session) {
-      this.session.release();
+      await this.session.release();
       this.session = null;
       this._initialized = false;
     }
   }
 }
 
-module.exports = DittliTTS;
+export default DittliTTS;

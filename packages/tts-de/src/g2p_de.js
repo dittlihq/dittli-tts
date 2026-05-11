@@ -6,17 +6,13 @@
  * and regenerate.
  */
 
-const fs = require("node:fs");
-const path = require("node:path");
+import _RULES_DATA from "./g2p_de_rules.json" with { type: "json" };
 
-const _RULES_PATH = path.join(__dirname, "g2p_de_rules.json");
-const _RULES_DATA = JSON.parse(fs.readFileSync(_RULES_PATH, "utf-8"));
-
-const EXCEPTIONS = _RULES_DATA.exceptions; // { lower: [phones...] }
-const RULES = _RULES_DATA.rules; // [[pattern, action], ...]
+const EXCEPTIONS = _RULES_DATA.exceptions;
+const RULES = _RULES_DATA.rules;
 const PREFIXES = _RULES_DATA.prefixes;
 const LOANWORD_V_FRAGMENTS = _RULES_DATA.loanword_v_fragments;
-const ABBREVIATIONS = _RULES_DATA.abbreviations; // [[pattern, expansion], ...]
+const ABBREVIATIONS = _RULES_DATA.abbreviations;
 const BACK_VOWELS = _RULES_DATA.back_vowels;
 const ALL_VOWELS = _RULES_DATA.all_vowels;
 const WORD_CHARS = new Set(_RULES_DATA.word_chars.split(""));
@@ -38,14 +34,6 @@ function chsRule(word, i) {
     return ["k", "s"];
   }
   return chRule(word, i).concat(["s"]);
-}
-
-function _stOrSp(word, i, voicedHead) {
-  if (i === 0) return [voicedHead, word[i + 1]];
-  for (const p of PREFIXES) {
-    if (word.startsWith(p) && i === p.length) return [voicedHead, word[i + 1]];
-  }
-  return [word[i], word[i + 1]];
 }
 
 function stRule(word, i) {
@@ -158,7 +146,7 @@ function _underMillion(n) {
   return rest === 0 ? `${head}tausend` : `${head}tausend${_underThousand(rest)}`;
 }
 
-function numberToWords(n) {
+export function numberToWords(n) {
   if (n < 0) return `minus ${numberToWords(-n)}`;
   if (n < 1_000_000) return _underMillion(n);
   if (n < 1_000_000_000) {
@@ -173,22 +161,18 @@ function numberToWords(n) {
   return rest === 0 ? b : `${b} ${_underMillion(rest)}`;
 }
 
-function normalizeNumbers(text) {
+export function normalizeNumbers(text) {
   return text.replace(/-?\d+/g, (m) => numberToWords(parseInt(m, 10)));
 }
 
-// ---------------------------------------------------------------------------
-// Abbreviation expansion.
-// ---------------------------------------------------------------------------
-
-function expandAbbreviations(text) {
+export function expandAbbreviations(text) {
   for (const [pattern, expansion] of ABBREVIATIONS) {
     text = text.replace(new RegExp(pattern, "g"), expansion);
   }
   return text;
 }
 
-function normalizeText(text) {
+export function normalizeText(text) {
   return normalizeNumbers(expandAbbreviations(text));
 }
 
@@ -196,7 +180,7 @@ function normalizeText(text) {
 // Rule scanner.
 // ---------------------------------------------------------------------------
 
-function _applyRules(word) {
+export function _applyRules(word) {
   word = word.toLowerCase();
   const out = [];
   let i = 0;
@@ -223,12 +207,6 @@ function _applyRules(word) {
   return out;
 }
 
-// ---------------------------------------------------------------------------
-// Symbol mapping & punctuation split.
-// Symbols are loaded lazily from the metadata sidecar; if not provided the
-// caller passes a Set<string> of allowed symbols. Replicates english.map_phoneme.
-// ---------------------------------------------------------------------------
-
 function _mapPhoneme(ph, symbolSet) {
   const rep = { "\n": ".", "...": "…", v: "V" };
   if (rep[ph] !== undefined) ph = rep[ph];
@@ -253,7 +231,7 @@ function _splitPunct(token) {
  *   to "UNK". Pass the `symbols` array from the model metadata sidecar.
  * `opts.padStartEnd` (boolean, default true) — match Python pad_start_end.
  */
-function graphemeToPhonemeDE(text, opts = {}) {
+export function graphemeToPhonemeDE(text, opts = {}) {
   const { symbolSet = null, padStartEnd = true } = opts;
   text = normalizeText(text);
   const rawWords = text.split(/\s+/).filter((w) => w.length > 0);
@@ -296,13 +274,3 @@ function graphemeToPhonemeDE(text, opts = {}) {
   }
   return { phones, tones, word2ph };
 }
-
-module.exports = {
-  graphemeToPhonemeDE,
-  normalizeText,
-  normalizeNumbers,
-  expandAbbreviations,
-  numberToWords,
-  // exposed for the parity test harness
-  _applyRules,
-};

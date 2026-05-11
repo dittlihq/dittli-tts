@@ -16,7 +16,7 @@ from dittli_tts.text import german as g
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 WORDLIST = REPO_ROOT / "scripts" / "de_test_words.txt"
-JS_RUNNER = REPO_ROOT / "scripts" / "_run_js_g2p.js"
+JS_RUNNER = REPO_ROOT / "scripts" / "_run_js_g2p.mjs"
 
 
 def python_phones(word: str) -> list[str]:

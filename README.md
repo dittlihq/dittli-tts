@@ -23,40 +23,58 @@ Dittli TTS extends the original TinyTTS with German language support, a full adv
 
 ---
 
-## Node.js (primary)
+## Browser (npm)
 
-Install the language pack you need — it pulls in `@dittli/tts-core` automatically:
+The npm packages are browser-only ESM (since v0.2.0) and run on top of
+[onnxruntime-web](https://www.npmjs.com/package/onnxruntime-web). Install the
+language pack(s) you need — `@dittli/tts-core` is pulled in automatically:
 
 ```bash
-npm install @dittli/tts-en          # English
-npm install @dittli/tts-de          # German
+npm install @dittli/tts-en           # English
+npm install @dittli/tts-de           # German
 npm install @dittli/tts-en @dittli/tts-de  # both
 ```
 
 ```js
-// English
-const DittliTTS = require('@dittli/tts-en');
-const tts = new DittliTTS({ modelPath: './dittli-en.onnx' });
-await tts.speak('Hello world!', 'out.wav');
+import { DittliTTS } from "@dittli/tts-en";
 
-// German
-const DittliTTS = require('@dittli/tts-de');
-const tts = new DittliTTS({ modelPath: './dittli-de.onnx' });
-await tts.speak('Guten Morgen!', 'out.wav');
+const tts = new DittliTTS({ language: "en" });
+const wavBytes = await tts.speak("Hello, world!");
 
-// Both languages in one process
-require('@dittli/tts-en');
-require('@dittli/tts-de');
-const DittliTTS = require('@dittli/tts-core');
-const tts = new DittliTTS({ modelPath: './dittli-en.onnx' });
+const url = URL.createObjectURL(new Blob([wavBytes], { type: "audio/wav" }));
+new Audio(url).play();
 ```
 
-CLI (`@dittli/tts-core` ships the `dittli-tts` binary):
+`speak()` returns a `Uint8Array` containing a complete WAV file. The language
+packs use `new URL(..., import.meta.url)` to point at the bundled `.onnx`
+model and metadata JSON — Vite, Rollup, esbuild, and Webpack 5 emit them as
+hashed static assets automatically.
 
-```bash
-npx dittli-tts "Hello world" --model dittli-en.onnx -o out.wav
-npx dittli-tts "Guten Morgen" --model dittli-de.onnx -o out.wav
+Both languages in one app:
+
+```js
+import "@dittli/tts-en";
+import "@dittli/tts-de";
+import { DittliTTS } from "@dittli/tts-core";
+
+const en = new DittliTTS({ language: "en" });
+const de = new DittliTTS({ language: "de" });
 ```
+
+Custom model URL (e.g. CDN-hosted):
+
+```js
+import { DittliTTS } from "@dittli/tts-core";
+import "@dittli/tts-en"; // still needed for the G2P registration
+
+const tts = new DittliTTS({
+  language: "en",
+  modelUrl: "https://cdn.example.com/dittli-en_fp16.onnx",
+  metadataUrl: "https://cdn.example.com/dittli-en.json",
+});
+```
+
+For Python / Node-side inference, use the Python package below.
 
 ## Python
 
