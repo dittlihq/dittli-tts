@@ -76,13 +76,13 @@ def main() -> None:
 
     targets = {
         "EN": (
-            os.path.join(ROOT, "packages", "tts-en", "metadata", "dittli-en.json"),
+            os.path.join(ROOT, "packages", "tts-en", "assets", "en", "metadata.json"),
             "english_v1",
             {"MALE": 0},
             _resolve_en_symbols(args.en_checkpoint),
         ),
         "DE": (
-            os.path.join(ROOT, "packages", "tts-de", "metadata", "dittli-de.json"),
+            os.path.join(ROOT, "packages", "tts-de", "assets", "de", "metadata.json"),
             "german_v1",
             {"THORSTEN": 0},
             list(new_symbols),

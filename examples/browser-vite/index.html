@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DittliTTS smoke</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 36rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      label { display: block; margin: 1rem 0 0.25rem; }
+      textarea { width: 100%; min-height: 4rem; font-family: inherit; }
+      button { padding: 0.5rem 1rem; margin-right: 0.5rem; }
+      #status { margin-top: 1rem; font-family: ui-monospace, monospace; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>DittliTTS smoke check</h1>
+    <p>
+      Loads `@dittli/tts-{core,en,de}` with <code>assetBase="/tts/"</code>
+      and exercises <code>init() → play()</code> end-to-end.
+    </p>
+    <label for="lang">Language</label>
+    <select id="lang">
+      <option value="en">English</option>
+      <option value="de">German</option>
+    </select>
+    <label for="text">Text</label>
+    <textarea id="text">Hello, world.</textarea>
+    <p>
+      <button id="play" type="button">Play</button>
+      <button id="stop" type="button">Stop</button>
+    </p>
+    <pre id="status">idle</pre>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

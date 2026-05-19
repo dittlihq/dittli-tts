@@ -1,6 +1,6 @@
 {
   "name": "@dittli/tts-core",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "DittliTTS inference engine for the browser — ONNX Runtime Web. Install a language pack (@dittli/tts-en, @dittli/tts-de) alongside this to synthesise speech.",
   "type": "module",
   "main": "src/index.js",
@@ -11,12 +11,23 @@
       "types": "./src/index.d.ts",
       "import": "./src/index.js",
       "default": "./src/index.js"
-    }
+    },
+    "./internal": {
+      "types": "./src/internal.d.ts",
+      "import": "./src/internal.js",
+      "default": "./src/internal.js"
+    },
+    "./ort-wasm/*": "./ort-wasm/*"
   },
   "files": [
-    "src/index.js",
-    "src/index.d.ts"
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "ort-wasm/**"
   ],
+  "sideEffects": false,
+  "scripts": {
+    "prepublishOnly": "node scripts/copy-ort-wasm.js && node ../../scripts/check-publish-assets.js tts-core"
+  },
   "keywords": [
     "tts",
     "text-to-speech",

@@ -5,10 +5,9 @@
  * conversion, matching the exact NumPy logic from the Python g2p_en package.
  *
  * The 4.3 MB weights file is fetched lazily on first use to keep the JS
- * bundle small.
+ * bundle small. The URL is resolved from `assetBase` at fetch time, not
+ * at module load — see PLAN_V040.md.
  */
-
-const MODEL_URL = new URL("./g2p_model.json", import.meta.url);
 
 let _model = null;
 let _modelPromise = null;
@@ -28,12 +27,16 @@ function reshape2D(flat, rows, cols) {
   return result;
 }
 
-async function _loadModel() {
-  const res = await fetch(MODEL_URL);
+async function _loadModel({ assetBase, signal, onProgress }) {
+  const url = `${assetBase}en/g2p_model.json`;
+  const res = await fetch(url, signal ? { signal } : undefined);
   if (!res.ok) {
-    throw new Error(`Failed to fetch g2p_model.json (${res.status}) from ${MODEL_URL}`);
+    throw new Error(`Failed to fetch g2p_model.json (${res.status}) from ${url}`);
   }
   const raw = await res.json();
+  if (onProgress) {
+    onProgress({ asset: "g2p_model", language: "en", loaded: 1, total: 1 });
+  }
 
   const m = {};
   for (const name of [
@@ -71,9 +74,9 @@ async function _loadModel() {
   return m;
 }
 
-export async function prepare() {
+export async function prepare(opts) {
   if (_model) return;
-  if (!_modelPromise) _modelPromise = _loadModel();
+  if (!_modelPromise) _modelPromise = _loadModel(opts);
   _model = await _modelPromise;
 }
 

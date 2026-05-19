@@ -1,24 +1,27 @@
 {
   "name": "@dittli/tts-en",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "DittliTTS English language pack — G2P + model metadata for @dittli/tts-core. Browser-targeted.",
   "type": "module",
   "main": "src/index.js",
   "module": "src/index.js",
+  "types": "src/index.d.ts",
   "exports": {
     ".": {
+      "types": "./src/index.d.ts",
       "import": "./src/index.js",
       "default": "./src/index.js"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "files": [
-    "src/index.js",
-    "src/g2p_en.js",
-    "src/g2p_predict.js",
-    "src/cmudict.json",
-    "src/g2p_model.json",
-    "metadata/dittli-en.json",
-    "model/dittli-en_fp16.onnx"
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.json",
+    "assets/**"
+  ],
+  "sideEffects": [
+    "./src/index.js"
   ],
   "scripts": {
     "prepublishOnly": "node ../../scripts/check-publish-assets.js tts-en"
@@ -42,7 +45,7 @@
     "url": "https://github.com/dittlihq/dittli-tts/issues"
   },
   "homepage": "https://github.com/dittlihq/dittli-tts#readme",
-  "dependencies": {
-    "@dittli/tts-core": "0.2.0"
+  "peerDependencies": {
+    "@dittli/tts-core": "^0.4.0"
   }
 }

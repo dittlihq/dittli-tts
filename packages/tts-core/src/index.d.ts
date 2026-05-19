@@ -1,3 +1,48 @@
+export type LanguageCode = string;
+
+export interface ProgressEvent {
+  asset: "model" | "metadata" | "cmudict" | "g2p_model";
+  language?: string;
+  loaded: number;
+  total: number;
+}
+
+export interface AssetLayout {
+  /** Base URL prefix for per-language assets. Trailing "/" is normalized. */
+  assetBase: string;
+  /** Separate base for ORT WASMs. Defaults to `${assetBase}ort/`. */
+  ortAssetBase?: string;
+}
+
+export interface DittliTTSOptions extends AssetLayout {
+  /** Primary language. Accepts "de", "de-DE", "en-US", etc. */
+  language: LanguageCode;
+  /** Default false. When false, library installs a console.warn filter for [W:onnxruntime] noise. */
+  verbose?: boolean;
+  /** Defaults to ["wasm"]. */
+  executionProviders?: string[];
+  /** Per-asset download progress. */
+  onProgress?: (e: ProgressEvent) => void;
+  /** Default false. When true, init() skips the kernel-warmup inference. */
+  skipWarmup?: boolean;
+  /** Explicit language packs (alternative to side-effect imports). */
+  packs?: LanguagePack[];
+}
+
+export interface SpeakOptions {
+  /** Override the instance's primary language for this call. */
+  language?: LanguageCode;
+  /** Cancels in-flight asset fetches AND aborts the ORT session.run. */
+  signal?: AbortSignal;
+  speed?: number;
+  speaker?: string;
+}
+
+export interface DecodedAudio {
+  samples: Float32Array;
+  sampleRate: number;
+}
+
 export interface ModelMetadata {
   language: string;
   language_id: number;
@@ -15,53 +60,45 @@ export interface G2PResult {
   word2ph?: number[];
 }
 
+export interface G2PPrepareOptions {
+  assetBase: string;
+  signal?: AbortSignal;
+  onProgress?: (e: ProgressEvent) => void;
+}
+
 export type G2PFunction = ((
   text: string,
   opts?: { symbolSet?: Set<string>; padStartEnd?: boolean },
 ) => G2PResult) & {
-  /** Optional async loader for assets that should be fetched on first use. */
-  prepare?: () => Promise<void>;
+  /** Loader for assets that should be fetched on first use. */
+  prepare?: (opts: G2PPrepareOptions) => Promise<void>;
 };
 
-export type UrlLike = string | URL;
-
-export interface DittliTTSOptions {
-  /** URL (string or URL) to the .onnx model. Falls back to the language pack's default. */
-  modelUrl?: UrlLike;
-  /** URL (string or URL) to the metadata JSON. Falls back to the language pack's default. */
-  metadataUrl?: UrlLike;
-  /** Language hint ("en", "de", ...) — used to pick a default when multiple packs are loaded. */
-  language?: string;
-  /** Execution providers passed to onnxruntime-web. Defaults to ["wasm"]. */
-  executionProviders?: string[];
+export interface LanguagePack {
+  language: LanguageCode;
+  g2p: G2PFunction;
+  /** Relative paths under `assetBase`. */
+  assets: { metadata: string; model: string };
 }
 
-export interface SpeakOptions {
-  speaker?: string;
-  speed?: number;
+export class AudioContextLockedError extends Error {
+  readonly name: "AudioContextLockedError";
 }
 
 export class DittliTTS {
-  constructor(options?: DittliTTSOptions);
-
-  static registerLanguage(lang: string, g2pFn: G2PFunction): void;
-  static registerDefaultMetadata(lang: string, metadataUrl: UrlLike): void;
-  static registerDefaultModel(lang: string, modelUrl: UrlLike): void;
-
-  metadata: ModelMetadata | null;
+  constructor(opts: DittliTTSOptions);
 
   init(): Promise<void>;
-
-  textToPhonemeIds(text: string): {
-    phoneIds: number[];
-    toneIds: number[];
-    langIds: number[];
-  };
-
-  /** Synthesizes `text` and returns the WAV file bytes. */
-  speak(text: string, options?: SpeakOptions): Promise<Uint8Array>;
-
+  loadLanguage(language: LanguageCode, opts?: { signal?: AbortSignal }): Promise<void>;
+  synthesize(text: string, opts?: SpeakOptions): Promise<DecodedAudio>;
+  play(text: string, opts?: SpeakOptions): Promise<void>;
+  stop(): void;
   dispose(): Promise<void>;
+
+  static preloadWhenIdle(opts: DittliTTSOptions): Promise<DittliTTS>;
 }
+
+/** Build a WAV file (Float32 → 16-bit PCM) and return its bytes. */
+export function floatToWav(samples: Float32Array, sampleRate: number): Uint8Array;
 
 export default DittliTTS;

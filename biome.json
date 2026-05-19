@@ -1,7 +1,15 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
   "files": {
-    "includes": ["**", "!cmudict.json", "!g2p_model.json", "!g2p_de_rules.json"]
+    "includes": [
+      "**",
+      "!**/cmudict.json",
+      "!**/g2p_model.json",
+      "!**/g2p_de_rules.json",
+      "!**/metadata.json",
+      "!**/ort-wasm/**",
+      "!**/public/tts/**"
+    ]
   },
   "linter": {
     "enabled": true,
