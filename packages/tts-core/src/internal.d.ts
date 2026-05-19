@@ -12,4 +12,6 @@ export function _resolveAsset(base: string, rel: string): string;
 
 export function _defaultOrtAssetBase(assetBase: string): string;
 
+export function _abortError(signal?: AbortSignal): Error;
+
 export type { LanguageCode, LanguagePack };

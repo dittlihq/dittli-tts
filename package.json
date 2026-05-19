@@ -32,7 +32,9 @@
     "test:parity": "pytest tests/parity",
     "test:integration": "pytest tests/integration",
     "test:slow": "pytest -m slow",
-    "test:all": "pytest -m ''",
+    "test:all": "pytest -m '' && vitest run",
+    "test:js": "vitest run",
+    "test:js:watch": "vitest",
     "lint": "biome check . && ruff check . && ruff format --check .",
     "lint:fix": "biome check --write . && ruff check --fix . && ruff format .",
     "lint:js": "biome check .",
@@ -43,6 +45,8 @@
     "export:onnx": "python -m dittli_tts.inference.export"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.13"
+    "@biomejs/biome": "^2.4.13",
+    "happy-dom": "^15.11.7",
+    "vitest": "^2.1.9"
   }
 }

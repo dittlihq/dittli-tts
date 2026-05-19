@@ -8,6 +8,8 @@
  * per `play()` call.
  */
 
+import { _abortError } from "./internal.js";
+
 const HEADER_SIZE = 44;
 
 /**
@@ -83,15 +85,24 @@ export function createAudioContext() {
  * or `signal` aborts. The returned cleanup is internal: this owns the
  * `AudioBufferSourceNode` for the duration of the call.
  */
-export function playSamples({ samples, sampleRate, audioContext, signal }) {
+export async function playSamples({ samples, sampleRate, audioContext, signal }) {
   if (!audioContext) {
     throw new Error("playSamples requires an audioContext");
   }
-  if (signal?.aborted) {
-    return Promise.reject(_abortError(signal));
-  }
+  if (signal?.aborted) throw _abortError(signal);
 
-  return new Promise((resolve, reject) => {
+  // Resolve the autoplay-policy lock before starting the source, otherwise
+  // the first scheduled buffer can play silent or with a clipped onset.
+  if (audioContext.state === "suspended") {
+    try {
+      await audioContext.resume();
+    } catch {
+      // resume failed; let start() surface a more specific error if it can
+    }
+  }
+  if (signal?.aborted) throw _abortError(signal);
+
+  return await new Promise((resolve, reject) => {
     const buffer = audioContext.createBuffer(1, samples.length, sampleRate);
     buffer.getChannelData(0).set(samples);
 
@@ -99,6 +110,9 @@ export function playSamples({ samples, sampleRate, audioContext, signal }) {
     source.buffer = buffer;
     source.connect(audioContext.destination);
 
+    // Hoisted so settle() can reference it even if onended fires
+    // synchronously during start() (zero-length buffer, some browsers).
+    let onAbort;
     let settled = false;
     const settle = (fn, value) => {
       if (settled) return;
@@ -114,7 +128,7 @@ export function playSamples({ samples, sampleRate, audioContext, signal }) {
 
     source.onended = () => settle(resolve);
 
-    const onAbort = () => {
+    onAbort = () => {
       try {
         source.stop();
       } catch {
@@ -124,16 +138,6 @@ export function playSamples({ samples, sampleRate, audioContext, signal }) {
     };
     if (signal) signal.addEventListener("abort", onAbort, { once: true });
 
-    if (audioContext.state === "suspended") {
-      audioContext.resume().catch(() => {});
-    }
     source.start();
   });
-}
-
-function _abortError(signal) {
-  if (signal?.reason instanceof Error) return signal.reason;
-  const err = new Error(signal?.reason || "Aborted");
-  err.name = "AbortError";
-  return err;
 }

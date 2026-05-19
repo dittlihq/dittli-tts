@@ -8,6 +8,8 @@
 
 import * as ort from "onnxruntime-web";
 
+import { _abortError } from "./internal.js";
+
 let _ortConfigured = false;
 let _filterInstalled = false;
 
@@ -34,6 +36,11 @@ function _installWarnFilter() {
 /**
  * Configure ORT once per page. Subsequent calls with the same `wasmPaths`
  * are no-ops; a different `wasmPaths` will overwrite.
+ *
+ * Note: when `verbose: false`, the `console.warn` filter is installed
+ * exactly once per page and **cannot be reverted**. A later call with
+ * `verbose: true` will not restore the original `console.warn`; reload
+ * the page if you need ORT warnings back during a debugging session.
  */
 export function configureOrt({ wasmPaths, verbose = false } = {}) {
   if (!verbose) _installWarnFilter();
@@ -84,11 +91,4 @@ export function tensor(type, data, shape) {
 
 export async function releaseSession(session) {
   if (session) await session.release();
-}
-
-function _abortError(signal) {
-  if (signal?.reason instanceof Error) return signal.reason;
-  const err = new Error(signal?.reason || "Aborted");
-  err.name = "AbortError";
-  return err;
 }

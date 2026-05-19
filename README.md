@@ -25,10 +25,8 @@ Dittli TTS extends the original TinyTTS with German language support, a full adv
 
 ## Browser (npm)
 
-The npm packages are browser-only ESM and run on top of
-[onnxruntime-web](https://www.npmjs.com/package/onnxruntime-web).
-`@dittli/tts-core` is the inference engine. Install it alongside a
-language pack:
+The npm packages are browser-only ESM. `@dittli/tts-core` is the
+inference engine; install it alongside a language pack:
 
 ```bash
 npm install @dittli/tts-core @dittli/tts-en           # English

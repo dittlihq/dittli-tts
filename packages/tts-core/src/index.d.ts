@@ -1,6 +1,6 @@
 export type LanguageCode = string;
 
-export interface ProgressEvent {
+export interface AssetProgressEvent {
   asset: "model" | "metadata" | "cmudict" | "g2p_model";
   language?: string;
   loaded: number;
@@ -22,7 +22,7 @@ export interface DittliTTSOptions extends AssetLayout {
   /** Defaults to ["wasm"]. */
   executionProviders?: string[];
   /** Per-asset download progress. */
-  onProgress?: (e: ProgressEvent) => void;
+  onProgress?: (e: AssetProgressEvent) => void;
   /** Default false. When true, init() skips the kernel-warmup inference. */
   skipWarmup?: boolean;
   /** Explicit language packs (alternative to side-effect imports). */
@@ -63,7 +63,7 @@ export interface G2PResult {
 export interface G2PPrepareOptions {
   assetBase: string;
   signal?: AbortSignal;
-  onProgress?: (e: ProgressEvent) => void;
+  onProgress?: (e: AssetProgressEvent) => void;
 }
 
 export type G2PFunction = ((

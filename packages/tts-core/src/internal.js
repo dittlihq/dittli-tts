@@ -65,3 +65,14 @@ export function _resolveAsset(base, rel) {
 export function _defaultOrtAssetBase(assetBase) {
   return _resolveAsset(assetBase, "ort/");
 }
+
+/**
+ * Convert an `AbortSignal`'s state into an Error suitable for rejecting a
+ * Promise. Mirrors what the DOM does for AbortSignal-aware APIs.
+ */
+export function _abortError(signal) {
+  if (signal?.reason instanceof Error) return signal.reason;
+  const err = new Error(signal?.reason || "Aborted");
+  err.name = "AbortError";
+  return err;
+}

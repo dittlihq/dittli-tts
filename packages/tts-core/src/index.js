@@ -55,11 +55,24 @@ export class DittliTTS {
     configureOrt({ wasmPaths: this._ortAssetBase, verbose: this._verbose });
   }
 
-  /** Idempotent. Loads the primary language and runs a kernel warmup. */
+  /**
+   * Idempotent. Loads the primary language and runs a kernel warmup.
+   *
+   * A successful init is sticky — subsequent calls return the cached
+   * promise. A failed init (e.g., transient network error during asset
+   * fetch) resets internal state so the next `init()` call retries.
+   */
   async init() {
     if (this._initPromise) return this._initPromise;
-    this._initPromise = this._init();
-    return this._initPromise;
+    const promise = this._init();
+    this._initPromise = promise;
+    try {
+      await promise;
+    } catch (err) {
+      if (this._initPromise === promise) this._initPromise = null;
+      throw err;
+    }
+    return promise;
   }
 
   async _init() {
