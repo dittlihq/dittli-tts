@@ -80,6 +80,9 @@ venv.bak/
 # Re-exported ORT WASMs — copied at prepublishOnly time, not committed.
 packages/tts-core/ort-wasm/
 
+# Output of scripts/test-publish.sh.
+/dist-pack/
+
 # Temp audio files
 *.wav
 
