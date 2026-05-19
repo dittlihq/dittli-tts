@@ -5,6 +5,10 @@
  *
  * Consumers copy `node_modules/@dittli/tts-core/ort-wasm/` into their
  * static asset tree alongside their per-language assets.
+ *
+ * We ship only the CPU (`wasm` execution provider) variant. The JSEP
+ * variant routes WebGPU kernels through JS — we don't use WebGPU, so
+ * shipping it would just double the cold-cache cost.
  */
 
 import { copyFileSync, existsSync, mkdirSync } from "node:fs";
@@ -13,12 +17,7 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-const ASSETS = [
-  "ort-wasm-simd-threaded.mjs",
-  "ort-wasm-simd-threaded.wasm",
-  "ort-wasm-simd-threaded.jsep.mjs",
-  "ort-wasm-simd-threaded.jsep.wasm",
-];
+const ASSETS = ["ort-wasm-simd-threaded.mjs", "ort-wasm-simd-threaded.wasm"];
 
 function findOrtDist(start) {
   let dir = start;

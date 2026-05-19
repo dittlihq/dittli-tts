@@ -5,8 +5,6 @@ const path = require("node:path");
 const ORT_WASM_ASSETS = [
   "ort-wasm/ort-wasm-simd-threaded.mjs",
   "ort-wasm/ort-wasm-simd-threaded.wasm",
-  "ort-wasm/ort-wasm-simd-threaded.jsep.mjs",
-  "ort-wasm/ort-wasm-simd-threaded.jsep.wasm",
 ];
 
 const MANIFEST = {
