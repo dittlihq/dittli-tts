@@ -2,23 +2,39 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
+const ORT_WASM_ASSETS = [
+  "ort-wasm/ort-wasm-simd-threaded.mjs",
+  "ort-wasm/ort-wasm-simd-threaded.wasm",
+];
+
 const MANIFEST = {
-  "tts-core": ["src/index.js", "src/index.d.ts"],
+  "tts-core": [
+    "src/index.js",
+    "src/index.d.ts",
+    "src/internal.js",
+    "src/internal.d.ts",
+    "src/ort.js",
+    "src/audio.js",
+    "src/engine.js",
+    ...ORT_WASM_ASSETS,
+  ],
   "tts-en": [
     "src/index.js",
+    "src/index.d.ts",
     "src/g2p_en.js",
     "src/g2p_predict.js",
-    "src/cmudict.json",
-    "src/g2p_model.json",
-    "metadata/dittli-en.json",
-    "model/dittli-en_fp16.onnx",
+    "assets/en/metadata.json",
+    "assets/en/model.onnx",
+    "assets/en/cmudict.json",
+    "assets/en/g2p_model.json",
   ],
   "tts-de": [
     "src/index.js",
+    "src/index.d.ts",
     "src/g2p_de.js",
     "src/g2p_de_rules.json",
-    "metadata/dittli-de.json",
-    "model/dittli-de_fp16.onnx",
+    "assets/de/metadata.json",
+    "assets/de/model.onnx",
   ],
 };
 
@@ -36,8 +52,10 @@ if (missing.length) {
   for (const m of missing) console.error(`  - ${m}`);
   console.error(
     `\nIf an ONNX model is missing, re-export it:\n` +
-      `  python -m dittli_tts.inference.export --checkpoint checkpoints/G.pth --lang EN --out packages/tts-en/model/dittli-en.onnx\n` +
-      `  python -m dittli_tts.inference.export --checkpoint checkpoints/G_de.pth --lang DE --out packages/tts-de/model/dittli-de.onnx`,
+      `  python -m dittli_tts.inference.export --checkpoint checkpoints/G.pth --lang EN --out packages/tts-en/assets/en/model.onnx\n` +
+      `  python -m dittli_tts.inference.export --checkpoint checkpoints/G_de.pth --lang DE --out packages/tts-de/assets/de/model.onnx\n` +
+      `\nIf an ORT WASM asset is missing in tts-core, run:\n` +
+      `  node packages/tts-core/scripts/copy-ort-wasm.js`,
   );
   process.exit(1);
 }

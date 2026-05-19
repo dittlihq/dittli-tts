@@ -1,0 +1,22 @@
+{
+  "name": "dittli-tts-browser-vite-smoke",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Canonical smoke check for @dittli/tts-* v0.4.x. Mirrors what a real consumer's build config looks like.",
+  "scripts": {
+    "predev": "node ./copy-assets.mjs",
+    "dev": "vite",
+    "prebuild": "node ./copy-assets.mjs",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dittli/tts-core": "workspace:*",
+    "@dittli/tts-de": "workspace:*",
+    "@dittli/tts-en": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

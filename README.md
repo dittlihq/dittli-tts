@@ -25,52 +25,89 @@ Dittli TTS extends the original TinyTTS with German language support, a full adv
 
 ## Browser (npm)
 
-The npm packages are browser-only ESM (since v0.2.0) and run on top of
-[onnxruntime-web](https://www.npmjs.com/package/onnxruntime-web). Install the
-language pack(s) you need — `@dittli/tts-core` is pulled in automatically:
+The npm packages are browser-only ESM. `@dittli/tts-core` is the
+inference engine; install it alongside a language pack:
 
 ```bash
-npm install @dittli/tts-en           # English
-npm install @dittli/tts-de           # German
-npm install @dittli/tts-en @dittli/tts-de  # both
+npm install @dittli/tts-core @dittli/tts-en           # English
+npm install @dittli/tts-core @dittli/tts-de           # German
+npm install @dittli/tts-core @dittli/tts-en @dittli/tts-de  # both
 ```
 
 ```js
-import { DittliTTS } from "@dittli/tts-en";
+import { DittliTTS } from "@dittli/tts-core";
+import "@dittli/tts-en";  // side-effect register
 
-const tts = new DittliTTS({ language: "en" });
-const wavBytes = await tts.speak("Hello, world!");
-
-const url = URL.createObjectURL(new Blob([wavBytes], { type: "audio/wav" }));
-new Audio(url).play();
+const tts = new DittliTTS({ language: "en", assetBase: "/tts/" });
+await tts.play("Hello, world!");
 ```
 
-`speak()` returns a `Uint8Array` containing a complete WAV file. The language
-packs use `new URL(..., import.meta.url)` to point at the bundled `.onnx`
-model and metadata JSON — Vite, Rollup, esbuild, and Webpack 5 emit them as
-hashed static assets automatically.
+That's it — `play()` owns the AudioContext, the WAV/Blob/`<audio>`
+dance, and stop/cancellation. To get raw samples instead, call
+`synthesize()` which returns `{ samples: Float32Array, sampleRate: number }`.
 
-Both languages in one app:
+### Setup: copy the assets
+
+`assetBase` is a URL prefix that points at where the language assets
+and the ORT WASMs live. The library never tries to load assets via
+`import.meta.url`, so it works under Vite dep pre-bundling, Webpack 5,
+Rollup, and esbuild without any extra plugins.
+
+Copy these directories into your static asset tree once
+(typically `public/tts/`):
+
+| From                                            | To                |
+| ----------------------------------------------- | ----------------- |
+| `node_modules/@dittli/tts-en/assets/en/`        | `public/tts/en/`  |
+| `node_modules/@dittli/tts-de/assets/de/`        | `public/tts/de/`  |
+| `node_modules/@dittli/tts-core/ort-wasm/`       | `public/tts/ort/` |
+
+A `postinstall` script or a Vite static-copy plugin works. See
+[`examples/browser-vite/copy-assets.mjs`](./examples/browser-vite/copy-assets.mjs)
+for a 20-line reference implementation.
+
+### Idle preload, cancellation, multi-language
 
 ```js
+import { DittliTTS } from "@dittli/tts-core";
 import "@dittli/tts-en";
 import "@dittli/tts-de";
-import { DittliTTS } from "@dittli/tts-core";
 
-const en = new DittliTTS({ language: "en" });
-const de = new DittliTTS({ language: "de" });
+// Construct + init + warm via requestIdleCallback.
+const tts = await DittliTTS.preloadWhenIdle({
+  language: "en",
+  assetBase: "/tts/",
+});
+
+// Add a second language to the same instance.
+await tts.loadLanguage("de");
+
+// Cancellable playback (e.g. cancel the previous utterance on click).
+const controller = new AbortController();
+await tts.play("Guten Morgen", { language: "de", signal: controller.signal });
+
+// Stop any current playback without disposing the engine.
+tts.stop();
 ```
 
-Custom model URL (e.g. CDN-hosted):
+### Verbose ORT logging
+
+By default the library installs a `console.warn` filter that drops
+ORT's `[W:onnxruntime:...]` messages — monkey-patching `console.warn`
+from a library is normally a sin, but the alternative is ~10 warnings
+per session for non-actionable noise. Pass `{ verbose: true }` to opt
+out.
+
+### Custom ORT asset location
+
+`ortAssetBase` defaults to `${assetBase}ort/`. Override it if your ORT
+WASMs live somewhere else (e.g. a CDN):
 
 ```js
-import { DittliTTS } from "@dittli/tts-core";
-import "@dittli/tts-en"; // still needed for the G2P registration
-
-const tts = new DittliTTS({
+new DittliTTS({
   language: "en",
-  modelUrl: "https://cdn.example.com/dittli-en_fp16.onnx",
-  metadataUrl: "https://cdn.example.com/dittli-en.json",
+  assetBase: "/tts/",
+  ortAssetBase: "https://cdn.example.com/ort-wasm/",
 });
 ```
 
@@ -171,8 +208,8 @@ src/dittli_tts/utils/config.py       ← model architecture + audio params
          ▼  npm run g2p:metadata
          │  (python scripts/gen_metadata.py)
          │
-packages/tts-en/metadata/dittli-en.json   ← generated
-packages/tts-de/metadata/dittli-de.json   ← generated
+packages/tts-en/assets/en/metadata.json   ← generated
+packages/tts-de/assets/de/metadata.json   ← generated
          │
          ▼  loaded at runtime by @dittli/tts-core
 ```

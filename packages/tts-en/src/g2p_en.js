@@ -3,24 +3,28 @@
  * Mirrors dittli_tts/text/english.py: CMU dictionary lookup with a neural G2P
  * fallback (g2p_predict.js) for OOV words.
  *
- * The CMU dict (~5 MB) and neural G2P weights (~4 MB) are fetched lazily on
- * first use — call `graphemeToPhonemeEN.prepare()` before calling the
- * function, or let `DittliTTS.init()` do it for you.
+ * Assets (CMU dict ~5 MB, neural G2P weights ~4 MB) are fetched lazily on
+ * first use via `graphemeToPhonemeEN.prepare({ assetBase, signal, onProgress })`.
+ * Core calls `prepare()` from inside `Engine.load()` with the consumer's
+ * `assetBase` — never at module load.
  */
 
 import { predict as _g2pPredict, prepare as _prepareG2pPredict } from "./g2p_predict.js";
 
-const CMU_URL = new URL("./cmudict.json", import.meta.url);
-
 let _cmu = null;
 let _cmuPromise = null;
 
-async function _loadCMU() {
-  const res = await fetch(CMU_URL);
+async function _loadCMU({ assetBase, signal, onProgress }) {
+  const url = `${assetBase}en/cmudict.json`;
+  const res = await fetch(url, signal ? { signal } : undefined);
   if (!res.ok) {
-    throw new Error(`Failed to fetch cmudict.json (${res.status}) from ${CMU_URL}`);
+    throw new Error(`Failed to fetch cmudict.json (${res.status}) from ${url}`);
   }
-  return await res.json();
+  const data = await res.json();
+  if (onProgress) {
+    onProgress({ asset: "cmudict", language: "en", loaded: 1, total: 1 });
+  }
+  return data;
 }
 
 function _getCMU() {
@@ -173,16 +177,20 @@ export function graphemeToPhonemeEN(text, opts = {}) {
   return { phones: allPhones, tones: allTones, word2ph };
 }
 
-graphemeToPhonemeEN.prepare = async function prepare() {
+graphemeToPhonemeEN.prepare = async function prepare(opts) {
+  const { assetBase, signal, onProgress } = opts || {};
+  if (!assetBase) {
+    throw new Error("graphemeToPhonemeEN.prepare requires { assetBase }");
+  }
   await Promise.all([
     _cmu
       ? Promise.resolve()
       : (() => {
-          if (!_cmuPromise) _cmuPromise = _loadCMU();
+          if (!_cmuPromise) _cmuPromise = _loadCMU({ assetBase, signal, onProgress });
           return _cmuPromise.then((d) => {
             _cmu = d;
           });
         })(),
-    _prepareG2pPredict(),
+    _prepareG2pPredict({ assetBase, signal, onProgress }),
   ]);
 };
