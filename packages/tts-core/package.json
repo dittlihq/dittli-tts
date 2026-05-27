@@ -1,7 +1,7 @@
 {
   "name": "@dittli/tts-core",
-  "version": "0.5.0",
-  "description": "DittliTTS inference engine for the browser — ONNX Runtime Web. Install a language pack (@dittli/tts-en, @dittli/tts-de) alongside this to synthesise speech.",
+  "version": "0.6.0",
+  "description": "DittliTTS inference engine for the browser — tract WASM runtime. Install a language pack (@dittli/tts-en, @dittli/tts-de) alongside this to synthesise speech.",
   "type": "module",
   "main": "src/index.js",
   "module": "src/index.js",
@@ -17,23 +17,23 @@
       "import": "./src/internal.js",
       "default": "./src/internal.js"
     },
-    "./ort-wasm/*": "./ort-wasm/*"
+    "./runtime-wasm/*": "./runtime-wasm/*"
   },
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",
-    "ort-wasm/**"
+    "runtime-wasm/**"
   ],
   "sideEffects": false,
   "scripts": {
-    "prepublishOnly": "node scripts/copy-ort-wasm.js && node ../../scripts/check-publish-assets.js tts-core"
+    "prepublishOnly": "node scripts/copy-runtime-wasm.js && node ../../scripts/check-publish-assets.js tts-core"
   },
   "keywords": [
     "tts",
     "text-to-speech",
     "speech-synthesis",
     "onnx",
-    "onnxruntime-web",
+    "tract",
     "browser",
     "webassembly",
     "lightweight",
@@ -49,8 +49,5 @@
   "bugs": {
     "url": "https://github.com/dittlihq/dittli-tts/issues"
   },
-  "homepage": "https://github.com/dittlihq/dittli-tts#readme",
-  "dependencies": {
-    "onnxruntime-web": "^1.19.0"
-  }
+  "homepage": "https://github.com/dittlihq/dittli-tts#readme"
 }

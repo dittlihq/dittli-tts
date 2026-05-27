@@ -1,7 +1,7 @@
 /**
  * Mirror what a real consumer's build config does: copy the per-language
- * assets and the re-exported ORT WASMs into `public/tts/` so Vite serves
- * them at `/tts/...`.
+ * assets and the re-exported tract WASM runtime into `public/tts/` so Vite
+ * serves them at `/tts/...`.
  *
  * In a normal consumer app this is one line in `vite.config.ts` (or a
  * `postinstall` script). We do it explicitly here to keep the smoke
@@ -22,14 +22,14 @@ mkdirSync(DEST, { recursive: true });
 const COPIES = [
   { from: resolve(ROOT, "packages/tts-en/assets/en"), to: resolve(DEST, "en") },
   { from: resolve(ROOT, "packages/tts-de/assets/de"), to: resolve(DEST, "de") },
-  { from: resolve(ROOT, "packages/tts-core/ort-wasm"), to: resolve(DEST, "ort") },
+  { from: resolve(ROOT, "packages/tts-core/runtime-wasm"), to: resolve(DEST, "runtime") },
 ];
 
 for (const { from, to } of COPIES) {
   if (!existsSync(from)) {
-    if (from.endsWith("ort-wasm")) {
+    if (from.endsWith("runtime-wasm")) {
       console.error(
-        `[copy-assets] missing ${from}.\nRun: node packages/tts-core/scripts/copy-ort-wasm.js`,
+        `[copy-assets] missing ${from}.\nRun: node packages/tts-core/scripts/copy-runtime-wasm.js`,
       );
       process.exit(1);
     }

@@ -1,6 +1,7 @@
 # Data
 /data
 
+
 node_modules
 
 # Byte-compiled / optimized / DLL files
@@ -79,6 +80,11 @@ venv.bak/
 
 # Re-exported ORT WASMs — copied at prepublishOnly time, not committed.
 packages/tts-core/ort-wasm/
+
+# tract Rust WASM build artefacts — generated, not committed.
+packages/tts-runtime/target/
+packages/tts-runtime/pkg/
+packages/tts-core/runtime-wasm/
 
 # Output of scripts/test-publish.sh.
 /dist-pack/

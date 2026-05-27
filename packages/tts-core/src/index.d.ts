@@ -10,16 +10,16 @@ export interface AssetProgressEvent {
 export interface AssetLayout {
   /** Base URL prefix for per-language assets. Trailing "/" is normalized. */
   assetBase: string;
-  /** Separate base for ORT WASMs. Defaults to `${assetBase}ort/`. */
-  ortAssetBase?: string;
+  /** Separate base for the tract WASM runtime. Defaults to `${assetBase}runtime/`. */
+  runtimeAssetBase?: string;
 }
 
 export interface DittliTTSOptions extends AssetLayout {
   /** Primary language. Accepts "de", "de-DE", "en-US", etc. */
   language: LanguageCode;
-  /** Default false. When false, library installs a console.warn filter for [W:onnxruntime] noise. */
+  /** Default false. */
   verbose?: boolean;
-  /** Defaults to ["wasm"]. */
+  /** Defaults to ["wasm"]. Accepted for API compatibility; tract always uses CPU. */
   executionProviders?: string[];
   /** Per-asset download progress. */
   onProgress?: (e: AssetProgressEvent) => void;
@@ -32,7 +32,7 @@ export interface DittliTTSOptions extends AssetLayout {
 export interface SpeakOptions {
   /** Override the instance's primary language for this call. */
   language?: LanguageCode;
-  /** Cancels in-flight asset fetches AND aborts the ORT session.run. */
+  /** Cancels in-flight asset fetches. */
   signal?: AbortSignal;
   speed?: number;
   speaker?: string;

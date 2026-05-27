@@ -60,10 +60,10 @@ export function _resolveAsset(base, rel) {
 }
 
 /**
- * Default ORT asset base derived from `assetBase`: `${assetBase}ort/`.
+ * Default runtime WASM base derived from `assetBase`: `${assetBase}runtime/`.
  */
-export function _defaultOrtAssetBase(assetBase) {
-  return _resolveAsset(assetBase, "ort/");
+export function _defaultRuntimeAssetBase(assetBase) {
+  return _resolveAsset(assetBase, "runtime/");
 }
 
 /**

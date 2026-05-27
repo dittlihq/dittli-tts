@@ -7,7 +7,7 @@
  */
 
 import { _resolveAsset } from "./internal.js";
-import { createSession, releaseSession, runSession, tensor } from "./ort.js";
+import { createSession, releaseSession, runSession, tensor } from "./runtime.js";
 
 function _validateMetadata(meta, source) {
   for (const k of ["language", "language_id", "tone_offset", "sample_rate", "symbols"]) {

@@ -5,26 +5,14 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("onnxruntime-web", () => {
-  class FakeTensor {
-    constructor(type, data, shape) {
-      this.type = type;
-      this.data = data;
-      this.dims = shape;
-    }
-  }
-  const InferenceSession = {
-    create: vi.fn(async () => ({
-      run: vi.fn(async () => ({ audio: { data: new Float32Array(8) } })),
-      release: vi.fn(async () => {}),
-    })),
-  };
-  return {
-    InferenceSession,
-    Tensor: FakeTensor,
-    env: { wasm: { wasmPaths: undefined } },
-  };
-});
+vi.mock("../../packages/tts-core/src/runtime.js", () => ({
+  configureRuntime: vi.fn(),
+  isRuntimeConfigured: vi.fn(() => true),
+  createSession: vi.fn(async () => ({ _fake: true })),
+  runSession: vi.fn(async () => ({ audio: { data: new Float32Array(8) } })),
+  tensor: vi.fn((type, data, shape) => ({ type, data, shape })),
+  releaseSession: vi.fn(async () => {}),
+}));
 
 function makeMeta(language = "xx") {
   return {

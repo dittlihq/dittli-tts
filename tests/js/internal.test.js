@@ -1,6 +1,6 @@
 import {
   _abortError,
-  _defaultOrtAssetBase,
+  _defaultRuntimeAssetBase,
   _getLanguagePack,
   _LANG_REGISTRY,
   _normalizeLanguage,
@@ -68,10 +68,10 @@ describe("_resolveAsset", () => {
   });
 });
 
-describe("_defaultOrtAssetBase", () => {
-  it("appends ort/", () => {
-    expect(_defaultOrtAssetBase("/tts/")).toBe("/tts/ort/");
-    expect(_defaultOrtAssetBase("/tts")).toBe("/tts/ort/");
+describe("_defaultRuntimeAssetBase", () => {
+  it("appends runtime/", () => {
+    expect(_defaultRuntimeAssetBase("/tts/")).toBe("/tts/runtime/");
+    expect(_defaultRuntimeAssetBase("/tts")).toBe("/tts/runtime/");
   });
 });
 

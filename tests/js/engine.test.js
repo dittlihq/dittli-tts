@@ -1,46 +1,52 @@
 /**
- * Engine tests with mocked onnxruntime-web. Verifies the asset-fetch
+ * Engine tests with mocked runtime.js. Verifies the asset-fetch
  * flow, metadata validation, AbortSignal propagation, and the
- * Promise.race abort behaviour around session.run.
+ * Promise.race abort behaviour around runSession.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("onnxruntime-web", () => {
+vi.mock("../../packages/tts-core/src/runtime.js", () => {
   const calls = { create: [], run: [], release: [] };
   let pending = null;
 
-  class FakeTensor {
-    constructor(type, data, shape) {
-      this.type = type;
-      this.data = data;
-      this.dims = shape;
-    }
-  }
-
-  const InferenceSession = {
-    create: vi.fn(async (bytes, opts) => {
-      calls.create.push({ bytes, opts });
-      return {
-        run: vi.fn(async (feeds) => {
-          calls.run.push(feeds);
-          if (pending) {
-            await pending;
-          }
-          // Return 16 samples of silence as the "audio" output.
-          return { audio: { data: new Float32Array(16) } };
-        }),
-        release: vi.fn(async () => {
-          calls.release.push(true);
-        }),
-      };
-    }),
-  };
-
   return {
-    InferenceSession,
-    Tensor: FakeTensor,
-    env: { wasm: { wasmPaths: undefined } },
+    configureRuntime: vi.fn(),
+    isRuntimeConfigured: vi.fn(() => true),
+    createSession: vi.fn(async (bytes) => {
+      calls.create.push(bytes);
+      return { _fake: true };
+    }),
+    runSession: vi.fn(async (_session, feeds, signal) => {
+      calls.run.push(feeds);
+      if (signal?.aborted) {
+        const err = new Error("Aborted");
+        err.name = "AbortError";
+        throw err;
+      }
+      if (pending) {
+        // Race the stall against the AbortSignal so abort tests work.
+        await new Promise((resolve, reject) => {
+          if (signal) {
+            signal.addEventListener(
+              "abort",
+              () => {
+                const err = new Error("Aborted");
+                err.name = "AbortError";
+                reject(err);
+              },
+              { once: true },
+            );
+          }
+          pending.then(resolve, reject);
+        });
+      }
+      return { audio: { data: new Float32Array(16) } };
+    }),
+    tensor: vi.fn((type, data, shape) => ({ type, data, shape })),
+    releaseSession: vi.fn(async () => {
+      calls.release.push(true);
+    }),
     __calls: calls,
     __stall(promise) {
       pending = promise;
@@ -120,8 +126,8 @@ function fakePack(opts = {}) {
 }
 
 beforeEach(async () => {
-  const ort = await import("onnxruntime-web");
-  ort.__reset();
+  const runtime = await import("../../packages/tts-core/src/runtime.js");
+  runtime.__reset();
 });
 
 afterEach(() => {
@@ -243,15 +249,15 @@ describe("Engine.synthesize", () => {
     });
   });
 
-  it("aborts an in-flight session.run via Promise.race", async () => {
-    const ort = await import("onnxruntime-web");
+  it("aborts an in-flight runSession via Promise.race", async () => {
+    const runtime = await import("../../packages/tts-core/src/runtime.js");
     const { Engine } = await import("../../packages/tts-core/src/engine.js");
     installFetch({
       "/base/xx/metadata.json": jsonResponse(makeMeta()),
       "/base/xx/model.onnx": bytesResponse(new Uint8Array([1])),
     });
-    // Stall session.run forever so the abort wins the race.
-    ort.__stall(new Promise(() => {}));
+    // Stall runSession forever so the abort wins the race.
+    runtime.__stall(new Promise(() => {}));
 
     const engine = new Engine({
       pack: fakePack(),
@@ -267,7 +273,7 @@ describe("Engine.synthesize", () => {
   });
 
   it("uses spk2id when speaker is provided", async () => {
-    const ort = await import("onnxruntime-web");
+    const runtime = await import("../../packages/tts-core/src/runtime.js");
     const { Engine } = await import("../../packages/tts-core/src/engine.js");
     installFetch({
       "/base/xx/metadata.json": jsonResponse(makeMeta({ spk2id: { ALICE: 3, BOB: 7 } })),
@@ -280,14 +286,14 @@ describe("Engine.synthesize", () => {
     });
     await engine.load();
     await engine.synthesize("hello", { speaker: "BOB" });
-    const lastFeeds = ort.__calls.run.at(-1);
+    const lastFeeds = runtime.__calls.run.at(-1);
     expect(Number(lastFeeds.sid.data[0])).toBe(7);
   });
 });
 
 describe("Engine.dispose", () => {
   it("releases the underlying session", async () => {
-    const ort = await import("onnxruntime-web");
+    const runtime = await import("../../packages/tts-core/src/runtime.js");
     const { Engine } = await import("../../packages/tts-core/src/engine.js");
     installFetch({
       "/base/xx/metadata.json": jsonResponse(makeMeta()),
@@ -301,6 +307,6 @@ describe("Engine.dispose", () => {
     await engine.load();
     await engine.dispose();
     expect(engine.session).toBeNull();
-    expect(ort.__calls.release.length).toBe(1);
+    expect(runtime.__calls.release.length).toBe(1);
   });
 });

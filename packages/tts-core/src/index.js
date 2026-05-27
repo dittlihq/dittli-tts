@@ -1,5 +1,5 @@
 /**
- * DittliTTS — text-to-speech for the browser via ONNX Runtime Web.
+ * DittliTTS — text-to-speech for the browser.
  *
  *   import { DittliTTS } from "@dittli/tts-core";
  *   import "@dittli/tts-de";  // side-effect registers the German pack
@@ -8,18 +8,18 @@
  *   await tts.play("Hallo Welt");
  *
  * The consumer copies `node_modules/@dittli/tts-{core,en,de}/assets`
- * (and `tts-core/ort-wasm/`) into one tree at `assetBase`. See README.
+ * (and `tts-core/runtime-wasm/`) into one tree at `assetBase`. See README.
  */
 
 import { createAudioContext, playSamples } from "./audio.js";
 import { Engine } from "./engine.js";
 import {
-  _defaultOrtAssetBase,
+  _defaultRuntimeAssetBase,
   _getLanguagePack,
   _normalizeLanguage,
   registerLanguagePack,
 } from "./internal.js";
-import { configureOrt } from "./ort.js";
+import { configureRuntime } from "./runtime.js";
 
 export { AudioContextLockedError, floatToWav } from "./audio.js";
 
@@ -34,7 +34,7 @@ export class DittliTTS {
 
     this._primaryLanguage = _normalizeLanguage(opts.language);
     this._assetBase = opts.assetBase;
-    this._ortAssetBase = opts.ortAssetBase || _defaultOrtAssetBase(opts.assetBase);
+    this._runtimeAssetBase = opts.runtimeAssetBase || _defaultRuntimeAssetBase(opts.assetBase);
     this._executionProviders = opts.executionProviders || ["wasm"];
     this._verbose = opts.verbose === true;
     this._onProgress = opts.onProgress || null;
@@ -52,7 +52,7 @@ export class DittliTTS {
       registerLanguagePack(pack);
     }
 
-    configureOrt({ wasmPaths: this._ortAssetBase, verbose: this._verbose });
+    configureRuntime({ wasmBase: this._runtimeAssetBase });
   }
 
   /**
@@ -183,7 +183,7 @@ export class DittliTTS {
     this._currentPlayController = null;
   }
 
-  /** Release all ORT sessions and close the AudioContext. */
+  /** Release all sessions and close the AudioContext. */
   async dispose() {
     this._disposed = true;
     this.stop();
