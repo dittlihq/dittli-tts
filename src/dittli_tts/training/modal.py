@@ -23,11 +23,12 @@ Cost on A10G (~$1.10/hr): roughly $5–10 for a usable model (~50 k steps),
 $10–20 for full polish (~100 k steps). Fits in a $30/month free credit.
 Override the GPU at the call site by editing GPU_KIND below.
 """
+
 from __future__ import annotations
 
 import modal
 
-GPU_KIND = "A10G"            # cheaper: "T4". Faster: "A100-40GB" or "L4".
+GPU_KIND = "A10G"  # cheaper: "T4". Faster: "A100-40GB" or "L4".
 TIMEOUT_HOURS = 12
 APP_NAME = "dittli-de-train"
 VOLUME_NAME = "dittli-de"
@@ -40,10 +41,19 @@ image = (
         ".",
         remote_path="/root/dittli-tts",
         ignore=[
-            "data/**", "checkpoints/*.pth", "checkpoints_de/**",
-            "venv/**", ".venv/**", ".git/**", "__pycache__/**",
-            "node_modules/**", "models/*.onnx",
-            "*.pth", "*.zip", "*.tgz", "*.tar.gz",
+            "data/**",
+            "checkpoints/*.pth",
+            "checkpoints_de/**",
+            "venv/**",
+            ".venv/**",
+            ".git/**",
+            "__pycache__/**",
+            "node_modules/**",
+            "models/*.onnx",
+            "*.pth",
+            "*.zip",
+            "*.tgz",
+            "*.tar.gz",
         ],
     )
 )
@@ -97,19 +107,27 @@ def train(max_steps: int | None = None, batch_size: int = 8) -> None:
     subprocess.run(["bash", "scripts/setup_de_data.sh"], check=True)
 
     print("[modal] running preprocess (~10 min) ...")
-    subprocess.run([
-        sys.executable, "-m", "dittli_tts.data.preprocess",
-        "--metadata", "data/thorsten/metadata.csv",
-        "--wavs-dir", "data/thorsten/wavs",
-    ], check=True)
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "dittli_tts.data.preprocess",
+            "--metadata",
+            "data/thorsten/metadata.csv",
+            "--wavs-dir",
+            "data/thorsten/wavs",
+        ],
+        check=True,
+    )
 
     # Resume-from-volume: pick the highest-step German checkpoint if any,
     # else fall back to the English warm-start. Non-numeric step names
     # (e.g. G_final.pth) are skipped — the trainer always saves a numbered
     # checkpoint at the same step as G_final.pth, so we lose nothing.
     def _ckpt_step(path: str) -> int:
-        suffix = os.path.basename(path)[len("G_"):-len(".pth")]
+        suffix = os.path.basename(path)[len("G_") : -len(".pth")]
         return int(suffix) if suffix.isdigit() else -1
+
     de_ckpts = sorted(
         (p for p in glob.glob("checkpoints_de/G_*.pth") if _ckpt_step(p) >= 0),
         key=_ckpt_step,
@@ -127,13 +145,20 @@ def train(max_steps: int | None = None, batch_size: int = 8) -> None:
         print(f"[modal] starting fresh, warm-start: {warm_start}")
 
     cmd = [
-        sys.executable, "scripts/finetune_de.py",
-        "--metadata", "data/thorsten/metadata.csv",
-        "--wavs-dir", "data/thorsten/wavs",
-        "--english-ckpt", warm_start,
-        "--ckpt-dir", "checkpoints_de/",
-        "--batch-size", str(batch_size),
-        "--device", "cuda",
+        sys.executable,
+        "scripts/finetune_de.py",
+        "--metadata",
+        "data/thorsten/metadata.csv",
+        "--wavs-dir",
+        "data/thorsten/wavs",
+        "--english-ckpt",
+        warm_start,
+        "--ckpt-dir",
+        "checkpoints_de/",
+        "--batch-size",
+        str(batch_size),
+        "--device",
+        "cuda",
         *extra_args,
     ]
     if max_steps is not None:

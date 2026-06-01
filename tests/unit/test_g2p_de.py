@@ -4,6 +4,7 @@ Curated word list — these specifically exercise the rule table in
 src/dittli_tts/text/german.py:RULES (ch / chs / st / sp / r / s / v rules,
 umlauts, devoicing, exception dict).
 """
+
 from __future__ import annotations
 
 import pytest
@@ -17,10 +18,24 @@ def phones(word: str) -> list[str]:
     return out
 
 
-@pytest.mark.parametrize("word", [
-    "der", "die", "das", "und", "haus", "katze", "schnell",
-    "guten", "morgen", "wie", "geht", "es", "dir",
-])
+@pytest.mark.parametrize(
+    "word",
+    [
+        "der",
+        "die",
+        "das",
+        "und",
+        "haus",
+        "katze",
+        "schnell",
+        "guten",
+        "morgen",
+        "wie",
+        "geht",
+        "es",
+        "dir",
+    ],
+)
 def test_g2p_de_returns_phones(word: str):
     out = phones(word)
     assert out, f"empty phone sequence for {word!r}"
@@ -43,11 +58,14 @@ def test_g2p_de_word2ph_sums_to_phone_count():
     assert sum(w2p) == len(p)
 
 
-@pytest.mark.parametrize("text,expected_substr", [
-    ("z.B. heute", "zum Beispiel"),
-    ("d.h. morgen", "das heißt"),
-    ("Dr. Schmidt", "Doktor"),
-])
+@pytest.mark.parametrize(
+    "text,expected_substr",
+    [
+        ("z.B. heute", "zum Beispiel"),
+        ("d.h. morgen", "das heißt"),
+        ("Dr. Schmidt", "Doktor"),
+    ],
+)
 def test_g2p_de_normalize_expands_abbreviations(text: str, expected_substr: str):
     assert expected_substr in g.normalize_text(text)
 

@@ -4,6 +4,7 @@ Run from the repo root:
     python -m dittli_tts.inference.export --checkpoint checkpoints/G.pth \
         --out models/dittli.onnx --lang EN
 """
+
 import argparse
 import json
 import os
@@ -33,8 +34,10 @@ def _resolve_symbols(lang: str, n_vocab: int | None = None) -> list[str]:
             if n_vocab is None or len(snap_syms) == n_vocab:
                 return snap_syms
     if n_vocab is not None and len(new_symbols) != n_vocab:
-        print(f"Warning: current symbol table has {len(new_symbols)} entries but "
-              f"checkpoint has vocab size {n_vocab}. Metadata may be mismatched.")
+        print(
+            f"Warning: current symbol table has {len(new_symbols)} entries but "
+            f"checkpoint has vocab size {n_vocab}. Metadata may be mismatched."
+        )
     return list(new_symbols)
 
 
@@ -57,11 +60,26 @@ class _OnnxWrapper(torch.nn.Module):
         self.model = model
 
     def forward(
-        self, x, x_lengths, sid, tone, language, bert, ja_bert,
-        noise_scale, noise_scale_w, length_scale,
+        self,
+        x,
+        x_lengths,
+        sid,
+        tone,
+        language,
+        bert,
+        ja_bert,
+        noise_scale,
+        noise_scale_w,
+        length_scale,
     ):
         o, _, _, _ = self.model.infer(
-            x, x_lengths, sid, tone, language, bert, ja_bert,
+            x,
+            x_lengths,
+            sid,
+            tone,
+            language,
+            bert,
+            ja_bert,
             noise_scale=noise_scale,
             noise_scale_w=noise_scale_w,
             length_scale=length_scale,
@@ -74,8 +92,7 @@ def main():
     p.add_argument("--checkpoint", required=True, help="Path to G.pth")
     p.add_argument("--out", default="models/dittli.onnx", help="Output .onnx path")
     p.add_argument("--lang", default="EN", help="Language code (EN, DE, …)")
-    p.add_argument("--spk2id", default=None,
-                   help='JSON dict, e.g. \'{"MALE":0}\' — defaults match the language')
+    p.add_argument("--spk2id", default=None, help="JSON dict, e.g. '{\"MALE\":0}' — defaults match the language")
     p.add_argument("--no-fp16", action="store_true", help="Skip FP16 conversion step")
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
@@ -112,33 +129,48 @@ def main():
 
     with torch.no_grad():
         out = wrapper(
-            x, x_lengths, sid, tone, language, bert, ja_bert,
-            noise_scale, noise_scale_w, length_scale,
+            x,
+            x_lengths,
+            sid,
+            tone,
+            language,
+            bert,
+            ja_bert,
+            noise_scale,
+            noise_scale_w,
+            length_scale,
         )
     print(f"sanity-check output shape: {tuple(out.shape)}")
 
     print(f"Exporting ONNX to {args.out} ...")
     torch.onnx.export(
         wrapper,
-        (x, x_lengths, sid, tone, language, bert, ja_bert,
-         noise_scale, noise_scale_w, length_scale),
+        (x, x_lengths, sid, tone, language, bert, ja_bert, noise_scale, noise_scale_w, length_scale),
         args.out,
         export_params=True,
         opset_version=14,
         dynamo=False,
         do_constant_folding=True,
         input_names=[
-            "x", "x_lengths", "sid", "tone", "language", "bert", "ja_bert",
-            "noise_scale", "noise_scale_w", "length_scale",
+            "x",
+            "x_lengths",
+            "sid",
+            "tone",
+            "language",
+            "bert",
+            "ja_bert",
+            "noise_scale",
+            "noise_scale_w",
+            "length_scale",
         ],
         output_names=["audio"],
         dynamic_axes={
-            "x":        {0: "batch_size", 1: "text_length"},
-            "tone":     {0: "batch_size", 1: "text_length"},
+            "x": {0: "batch_size", 1: "text_length"},
+            "tone": {0: "batch_size", 1: "text_length"},
             "language": {0: "batch_size", 1: "text_length"},
-            "bert":     {0: "batch_size", 2: "text_length"},
-            "ja_bert":  {0: "batch_size", 2: "text_length"},
-            "audio":    {0: "batch_size", 2: "audio_length"},
+            "bert": {0: "batch_size", 2: "text_length"},
+            "ja_bert": {0: "batch_size", 2: "text_length"},
+            "audio": {0: "batch_size", 2: "audio_length"},
         },
     )
     fp32_size = os.path.getsize(args.out) / (1024 * 1024)
@@ -152,17 +184,18 @@ def main():
     meta = _build_metadata(args.lang, spk2id, symbols)
     with open(sidecar, "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
-    print(f"Wrote sidecar {sidecar} (n_symbols={len(symbols)}, "
-          f"language_id={meta['language_id']}, tone_offset={meta['tone_offset']})")
+    print(
+        f"Wrote sidecar {sidecar} (n_symbols={len(symbols)}, "
+        f"language_id={meta['language_id']}, tone_offset={meta['tone_offset']})"
+    )
 
     if args.no_fp16:
         return
 
     try:
+        from onnx import load_model, save_model
         from onnxruntime.quantization.shape_inference import quant_pre_process
         from onnxruntime.transformers.float16 import convert_float_to_float16
-
-        from onnx import load_model, save_model
 
         print("Converting to FP16 ...")
         pre_path = args.out.replace(".onnx", "_infer.onnx")

@@ -25,12 +25,12 @@ SEGMENT_SIZE = 32  # in spec frames; matches SEGMENT_FRAMES in inference config
 C_MEL = 45.0
 C_KL = 1.0
 C_DUR = 1.0
-C_FM = 2.0      # already baked into feature_matching_loss; here for visibility
+C_FM = 2.0  # already baked into feature_matching_loss; here for visibility
 
 # Mel config (must match the mel used to compute the dataset spec via FFT params)
 N_MELS = 128
 F_MIN = 0.0
-F_MAX = None     # → sr/2
+F_MAX = None  # → sr/2
 
 # Dataloader
 NUM_WORKERS = 4

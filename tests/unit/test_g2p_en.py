@@ -3,6 +3,7 @@
 `english.py` needs `g2p_en` (which transitively pulls nltk's cmudict);
 the suite skips if that toolchain isn't available.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -12,6 +13,7 @@ import pytest
 def en():
     pytest.importorskip("g2p_en")
     from dittli_tts.text import english
+
     return english
 
 

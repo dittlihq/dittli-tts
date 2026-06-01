@@ -21,40 +21,38 @@ from dittli_tts.utils import (
 )
 
 
-def load_engine(checkpoint_path, device='cuda'):
+def load_engine(checkpoint_path, device="cuda"):
     print(f"Loading model from {checkpoint_path}")
-    net_g = VoiceSynthesizer(
-        len(symbols),
-        SPEC_CHANNELS,
-        SEGMENT_FRAMES,
-        n_speakers=N_SPEAKERS,
-        **MODEL_PARAMS
-    ).to(device)
+    net_g = VoiceSynthesizer(len(symbols), SPEC_CHANNELS, SEGMENT_FRAMES, n_speakers=N_SPEAKERS, **MODEL_PARAMS).to(
+        device
+    )
 
     # Count model parameters
     total_params = sum(p.numel() for p in net_g.parameters())
     trainable_params = sum(p.numel() for p in net_g.parameters() if p.requires_grad)
-    print(f"Model parameters: {total_params/1e6:.2f}M total, {trainable_params/1e6:.2f}M trainable")
+    print(f"Model parameters: {total_params / 1e6:.2f}M total, {trainable_params / 1e6:.2f}M trainable")
 
     checkpoint = torch.load(checkpoint_path, map_location=device)
-    state_dict = checkpoint['model']
+    state_dict = checkpoint["model"]
 
     # Remove module. prefix and filter shape mismatches
     model_state = net_g.state_dict()
     new_state_dict = {}
     skipped = []
     for k, v in state_dict.items():
-        key = k[7:] if k.startswith('module.') else k
+        key = k[7:] if k.startswith("module.") else k
         if key in model_state:
             if v.shape == model_state[key].shape:
                 new_state_dict[key] = v
-            elif (v.ndim == model_state[key].ndim
-                  and v.shape[1:] == model_state[key].shape[1:]
-                  and v.shape[0] < model_state[key].shape[0]):
+            elif (
+                v.ndim == model_state[key].ndim
+                and v.shape[1:] == model_state[key].shape[1:]
+                and v.shape[0] < model_state[key].shape[0]
+            ):
                 # Checkpoint has fewer rows (e.g. pre-German symbol table):
                 # copy existing rows, leave the rest at their random init.
                 t = model_state[key].clone()
-                t[:v.shape[0]] = v
+                t[: v.shape[0]] = v
                 new_state_dict[key] = t
                 skipped.append(f"{key}: padded ckpt{v.shape}→model{model_state[key].shape}")
             else:
@@ -67,7 +65,7 @@ def load_engine(checkpoint_path, device='cuda'):
         for s in skipped[:5]:
             print(f"  {s}")
         if len(skipped) > 5:
-            print(f"  ... and {len(skipped)-5} more")
+            print(f"  ... and {len(skipped) - 5} more")
 
     net_g.load_state_dict(new_state_dict, strict=False)
     net_g.eval()
@@ -78,7 +76,7 @@ def load_engine(checkpoint_path, device='cuda'):
     return net_g
 
 
-def synthesize(text, output_path, model, speaker="MALE", device='cuda', speed=1.0, lang="EN"):
+def synthesize(text, output_path, model, speaker="MALE", device="cuda", speed=1.0, lang="EN"):
     print(f"Synthesizing ({lang}): {text}")
 
     normalize_text, grapheme_to_phoneme = get_g2p(lang)
@@ -113,10 +111,16 @@ def synthesize(text, output_path, model, speaker="MALE", device='cuda', speed=1.
 
     with torch.no_grad():
         audio, *_ = model.infer(
-            x, x_lengths, sid, tone, language, bert, ja_bert,
+            x,
+            x_lengths,
+            sid,
+            tone,
+            language,
+            bert,
+            ja_bert,
             noise_scale=0.667,
             noise_scale_w=0.8,
-            length_scale=length_scale
+            length_scale=length_scale,
         )
 
     audio = audio[0, 0].cpu().numpy()
@@ -126,12 +130,12 @@ def synthesize(text, output_path, model, speaker="MALE", device='cuda', speed=1.
 
 def get_latest_checkpoint(checkpoint_dir):
     """Finds the latest G_*.pth checkpoint in the given directory."""
-    checkpoints = [f for f in os.listdir(checkpoint_dir) if f.startswith('G_') and f.endswith('.pth')]
+    checkpoints = [f for f in os.listdir(checkpoint_dir) if f.startswith("G_") and f.endswith(".pth")]
     if not checkpoints:
         return None
 
     def get_step(filename):
-        match = re.search(r'_(\d+)\.pth', filename)
+        match = re.search(r"_(\d+)\.pth", filename)
         return int(match.group(1)) if match else -1
 
     latest_ckpt = max(checkpoints, key=get_step)
@@ -140,7 +144,13 @@ def get_latest_checkpoint(checkpoint_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="DittliTTS — English Text-to-Speech Inference")
-    parser.add_argument("--text", "-t", type=str, default="The weather is nice today, and I feel very relaxed.", help="Text to synthesize")
+    parser.add_argument(
+        "--text",
+        "-t",
+        type=str,
+        default="The weather is nice today, and I feel very relaxed.",
+        help="Text to synthesize",
+    )
     parser.add_argument("--checkpoint", "-c", type=str, required=True, help="Path to checkpoint .pth file or directory")
     parser.add_argument("--output", "-o", type=str, default="output.wav", help="Output audio file path")
     parser.add_argument("--speaker", "-s", type=str, default="MALE", help="Speaker ID")
@@ -164,7 +174,7 @@ def main():
 
     # Extract step from checkpoint filename
     ckpt_basename = os.path.basename(args.checkpoint)
-    match = re.search(r'_(\d+)\.pth', ckpt_basename)
+    match = re.search(r"_(\d+)\.pth", ckpt_basename)
     step_str = match.group(1) if match else "unknown"
 
     # Save to output folder
@@ -182,10 +192,15 @@ def main():
         print(f"Synthesizing for all {len(SPK2ID)} speakers...")
         for spk in SPK2ID.keys():
             final_output = os.path.join(out_dir, f"{name}_step{step_str}_spk{spk}{ext}")
-            synthesize(args.text, final_output, model, speaker=spk, device=args.device, speed=args.speed, lang=args.lang)
+            synthesize(
+                args.text, final_output, model, speaker=spk, device=args.device, speed=args.speed, lang=args.lang
+            )
     else:
         final_output = os.path.join(out_dir, f"{name}_step{step_str}_spk{args.speaker}{ext}")
-        synthesize(args.text, final_output, model, speaker=args.speaker, device=args.device, speed=args.speed, lang=args.lang)
+        synthesize(
+            args.text, final_output, model, speaker=args.speaker, device=args.device, speed=args.speed, lang=args.lang
+        )
+
 
 if __name__ == "__main__":
     main()

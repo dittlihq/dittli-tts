@@ -1,4 +1,5 @@
 """German abbreviation expansion. Order matters — longer patterns first."""
+
 import re
 
 # (pattern, expansion) — pattern is a regex that must match the abbreviation

@@ -1,4 +1,5 @@
 """Symbol-table and id-mapping invariants."""
+
 from __future__ import annotations
 
 import pytest
@@ -33,7 +34,7 @@ def test_phonemes_to_ids_roundtrip(lang: str):
     ids, tones, langs = phonemes_to_ids(["_", "UNK"], [0, 0], lang)
     assert ids == [symbols.index("_"), symbols.index("UNK")]
     assert all(t == language_tone_start_map[lang] for t in tones)
-    assert all(l == language_id_map[lang] for l in langs)
+    assert all(lid == language_id_map[lang] for lid in langs)
 
 
 def test_phonemes_to_ids_unknown_falls_back_to_unk():

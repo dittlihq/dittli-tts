@@ -50,11 +50,7 @@ class ConvReluNorm(nn.Module):
 
         self.conv_layers = nn.ModuleList()
         self.norm_layers = nn.ModuleList()
-        self.conv_layers.append(
-            nn.Conv1d(
-                in_channels, hidden_channels, kernel_size, padding=kernel_size // 2
-            )
-        )
+        self.conv_layers.append(nn.Conv1d(in_channels, hidden_channels, kernel_size, padding=kernel_size // 2))
         self.norm_layers.append(ChannelNorm(hidden_channels))
         self.relu_drop = nn.Sequential(nn.ReLU(), nn.Dropout(p_dropout))
         for _ in range(n_layers - 1):
@@ -152,9 +148,7 @@ class WaveNet(torch.nn.Module):
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
-            cond_layer = torch.nn.Conv1d(
-                gin_channels, 2 * hidden_channels * n_layers, 1
-            )
+            cond_layer = torch.nn.Conv1d(gin_channels, 2 * hidden_channels * n_layers, 1)
             self.cond_layer = torch.nn.utils.weight_norm(cond_layer, name="weight")
 
         for i in range(n_layers):
@@ -474,9 +468,7 @@ class ConvolutionalFlow(nn.Module):
 
         self.pre = nn.Conv1d(self.half_channels, filter_channels, 1)
         self.convs = DepthwiseSepConv(filter_channels, kernel_size, n_layers, p_dropout=0.0)
-        self.proj = nn.Conv1d(
-            filter_channels, self.half_channels * (num_bins * 3 - 1), 1
-        )
+        self.proj = nn.Conv1d(filter_channels, self.half_channels * (num_bins * 3 - 1), 1)
         self.proj.weight.data.zero_()
         self.proj.bias.data.zero_()
 
@@ -490,9 +482,7 @@ class ConvolutionalFlow(nn.Module):
         h = h.reshape(b, c, -1, t).permute(0, 1, 3, 2)
 
         unnormalized_widths = h[..., : self.num_bins] / math.sqrt(self.filter_channels)
-        unnormalized_heights = h[..., self.num_bins : 2 * self.num_bins] / math.sqrt(
-            self.filter_channels
-        )
+        unnormalized_heights = h[..., self.num_bins : 2 * self.num_bins] / math.sqrt(self.filter_channels)
         unnormalized_derivatives = h[..., 2 * self.num_bins :]
 
         x1, logabsdet = spline_transform(

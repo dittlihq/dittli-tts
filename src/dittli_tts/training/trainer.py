@@ -4,6 +4,7 @@ Run via `scripts/finetune_de.py` for the German fine-tune (the script handles
 loading the English checkpoint and remapping the embedding before calling
 `Trainer.run`).
 """
+
 from __future__ import annotations
 
 import os
@@ -20,6 +21,10 @@ from dittli_tts.audio import (
     spec_to_mel_torch,
 )
 from dittli_tts.data.dataset import ThorstenDataset, collate
+from dittli_tts.models.discriminator import MultiPeriodDiscriminator
+from dittli_tts.models.synthesizer import VoiceSynthesizer
+from dittli_tts.nn import commons
+from dittli_tts.text.symbols import symbols
 from dittli_tts.training.losses import (
     discriminator_loss,
     feature_matching_loss,
@@ -27,10 +32,6 @@ from dittli_tts.training.losses import (
     kl_loss,
     mel_loss,
 )
-from dittli_tts.models.discriminator import MultiPeriodDiscriminator
-from dittli_tts.models.synthesizer import VoiceSynthesizer
-from dittli_tts.nn import commons
-from dittli_tts.text.symbols import symbols
 from dittli_tts.utils.config import (
     FILTER_LENGTH,
     HOP_LENGTH,
@@ -63,7 +64,7 @@ class TrainerConfig:
     metadata_path: str
     wavs_dir: str
     ckpt_dir: str
-    init_g_ckpt: str | None = None      # English G.pth to fine-tune from
+    init_g_ckpt: str | None = None  # English G.pth to fine-tune from
     init_d_ckpt: str | None = None
     n_speakers: int = 1
     total_steps: int = 100_000
@@ -185,20 +186,44 @@ class Trainer:
         amp_enabled = self.scaler.is_enabled()
         with torch.cuda.amp.autocast(enabled=amp_enabled):
             (
-                o, l_dur_sdp, l_dur_dp, _attn,
-                ids_slice, x_mask, y_mask,
+                o,
+                l_dur_sdp,
+                l_dur_dp,
+                _attn,
+                ids_slice,
+                x_mask,
+                y_mask,
                 (z, z_p, m_p_exp, logs_p_exp, m_q, logs_q),
             ) = self.net_g(
-                x, x_lengths, spec, spec_lengths, sid, tone, language, bert, ja_bert,
+                x,
+                x_lengths,
+                spec,
+                spec_lengths,
+                sid,
+                tone,
+                language,
+                bert,
+                ja_bert,
             )
 
             mel_y_full = spec_to_mel_torch(
-                spec, FILTER_LENGTH, N_MELS, SAMPLING_RATE, F_MIN, F_MAX,
+                spec,
+                FILTER_LENGTH,
+                N_MELS,
+                SAMPLING_RATE,
+                F_MIN,
+                F_MAX,
             )
             mel_y_slice = commons_extract(mel_y_full, ids_slice, self.cfg.segment_size)
             mel_o = mel_spectrogram_torch(
-                o.squeeze(1), FILTER_LENGTH, N_MELS, SAMPLING_RATE,
-                HOP_LENGTH, FILTER_LENGTH, F_MIN, F_MAX,
+                o.squeeze(1),
+                FILTER_LENGTH,
+                N_MELS,
+                SAMPLING_RATE,
+                HOP_LENGTH,
+                FILTER_LENGTH,
+                F_MIN,
+                F_MAX,
             )
 
             wav_slice = _slice_wav_for_segment(wav, ids_slice, self.cfg.segment_size)
@@ -246,8 +271,7 @@ class Trainer:
         }
 
     def run(self):
-        print(f"[trainer] device={self.device} batch_size={self.cfg.batch_size} "
-              f"steps={self.cfg.total_steps}")
+        print(f"[trainer] device={self.device} batch_size={self.cfg.batch_size} steps={self.cfg.total_steps}")
         t0 = time.time()
         last_log = t0
 

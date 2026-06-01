@@ -7,9 +7,9 @@ from dittli_tts import DittliTTS
 
 # Download required NLTK data for g2p-en
 try:
-    nltk.download('averaged_perceptron_tagger_eng', quiet=True)
-    nltk.download('averaged_perceptron_tagger', quiet=True)
-    nltk.download('cmudict', quiet=True)
+    nltk.download("averaged_perceptron_tagger_eng", quiet=True)
+    nltk.download("averaged_perceptron_tagger", quiet=True)
+    nltk.download("cmudict", quiet=True)
 except Exception as e:
     print(f"NLTK download warning: {e}")
 
@@ -62,14 +62,10 @@ with gr.Blocks(title="DittliTTS Demo", theme=gr.themes.Soft()) as app:
                 label="Input Text",
                 placeholder="Enter English text here...",
                 value="The weather is nice today, and I feel very relaxed.",
-                lines=4
+                lines=4,
             )
             speed_slider = gr.Slider(
-                minimum=0.5,
-                maximum=2.0,
-                value=1.0,
-                step=0.1,
-                label="Speed (1.0 = normal, >1 = faster, <1 = slower)"
+                minimum=0.5, maximum=2.0, value=1.0, step=0.1, label="Speed (1.0 = normal, >1 = faster, <1 = slower)"
             )
             submit_btn = gr.Button("🔊 Synthesize Speech", variant="primary")
 
@@ -87,11 +83,7 @@ with gr.Blocks(title="DittliTTS Demo", theme=gr.themes.Soft()) as app:
         inputs=[text_input, speed_slider],
     )
 
-    submit_btn.click(
-        fn=synthesize_audio,
-        inputs=[text_input, speed_slider],
-        outputs=audio_output
-    )
+    submit_btn.click(fn=synthesize_audio, inputs=[text_input, speed_slider], outputs=audio_output)
 
     # Comparison table
     gr.Markdown(COMPARISON_TABLE)

@@ -1,4 +1,5 @@
 """Training losses for VITS-style TTS with HiFi-GAN discriminator."""
+
 import torch
 from torch.nn import functional as F
 
@@ -39,7 +40,7 @@ def discriminator_loss(disc_real_outputs, disc_gen_outputs):
         dr = dr.float()
         dg = dg.float()
         r_loss = torch.mean((1 - dr) ** 2)
-        g_loss = torch.mean(dg ** 2)
+        g_loss = torch.mean(dg**2)
         loss = loss + r_loss + g_loss
         r_losses.append(r_loss.item())
         g_losses.append(g_loss.item())
