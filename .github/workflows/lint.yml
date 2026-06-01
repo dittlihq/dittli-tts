@@ -1,0 +1,36 @@
+name: Lint Check
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 24
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Lint JavaScript (biome)
+        run: npm run lint:js
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0 # renovate: pinned to a digest by helpers:pinGitHubActionDigests
+        with:
+          enable-cache: true
+
+      - name: Install Python dev dependencies
+        run: uv sync --extra dev
+
+      - name: Lint Python (ruff)
+        run: uv run ruff check .
+
+      - name: Check Python formatting (ruff)
+        run: uv run ruff format --check .
