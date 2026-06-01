@@ -1,10 +1,129 @@
-# Training Session Notes — 2026-04-29
+# Project history
+
+A chronological, summarised record of the major steps the project has gone
+through. Each entry links to the deeper doc where one exists. For a
+release-oriented view see [`/CHANGELOG.md`](../CHANGELOG.md); this file is the
+narrative behind it (decisions, dead ends, gotchas).
+
+Newest first.
+
+---
+
+## Summary timeline
+
+| Date | Step | Outcome |
+|------|------|---------|
+| 2026-06-01 | ORT jsep import fix + docs reorg | Runtime fetch 25 MB → 12.4 MB via one-line import; FP16 kept |
+| 2026-05-27 | rten runtime spike (branch only) | rten ≈1.6 MB but lost FP16, slower, brittle — kept as a spike, not merged |
+| 2026-05-19 | **v0.5.0** — clean-break browser API | `DittliTTS` class + `assetBase`; JSEP intent dropped; 58/58 vitest |
+| 2026-05-18 | **v0.4.0** — asset layout + ergonomics | Clean assets, no `import.meta.url`, single-touchpoint `ort.js` |
+| 2026-04-30 | npm workspace split + **v0.1.0/0.2.0** | `@dittli/tts-{core,en,de}`; 0.2.0 last public on npm |
+| 2026-04-29 | German training run (Thorsten Voice) | Trained, exported, browser-verified German model |
+| 2026-04-28 | German implementation (Phases 1–5) | Symbols, G2P parity, training infra, ONNX export |
+| 2026-04 | Rename + restructure (TinyTTS → Dittli) | `src/` layout, uv, linting, pytest suite |
+
+---
+
+## 2026-06-01 — ORT jsep import fix + docs reorganisation
+
+**Problem.** `onnxruntime-web` was suspected unviable because of a "huge jsep
+binary required at runtime." Root-caused on `develop`: `src/ort.js` imported the
+**default** package entry (`import * as ort from "onnxruntime-web"`), whose
+loader hard-references `ort-wasm-simd-threaded.jsep.wasm` (**25 MB**, the
+WebGPU/JSEP build) and fetches it at runtime — even though we only use the CPU
+`wasm` provider and only ship the non-jsep binary. The shipped wasm didn't even
+match what the loader requested.
+
+**Investigation (on a fresh install, onnxruntime-web `^1.19.0` → resolved
+1.26.0):** grepped the dist bundles for the wasm filename each entry fetches.
+
+| Import | JS bundle | `.wasm` fetched at runtime |
+|--------|-----------|----------------------------|
+| `"onnxruntime-web"` (was) | `ort.bundle.min.mjs` (0.39 MB) | `ort-wasm-simd-threaded.jsep.wasm` — **25.0 MB** |
+| `"onnxruntime-web/wasm"` (now) | `ort.wasm.bundle.min.mjs` (0.07 MB) | `ort-wasm-simd-threaded.wasm` — **12.4 MB** |
+
+**Fix.** One line: `src/ort.js` now imports `onnxruntime-web/wasm`. Bumped the
+dependency to `^1.26.0` (newest). Runtime fetch halves (25 → 12.4 MB), FP16
+model stays 4.6 MB, no toolchain. This made the rten migration and a reduced
+custom ORT build *optional* rather than necessary — see
+[2026-05-27_PLAN_POST_RTEN.md](2026-05-27_PLAN_POST_RTEN.md) (updated header).
+
+Also: renamed the docs in this folder to carry their creation date as a prefix,
+renamed `SESSION_NOTES.md` → this file, and added a root `CHANGELOG.md`.
+
+## 2026-05-27 — rten runtime spike (branch `size-improvements`, not merged)
+
+Migrated the inference runtime from `onnxruntime-web` to
+[`rten`](https://github.com/robertknight/rten) (Rust ONNX runtime compiled to
+WASM, vendored as `packages/tts-runtime/` + a patched `rten-simd-patched`).
+Runtime WASM dropped to ~1.6 MB, **but**: rten has no fp16 kernels so the model
+bloated 4.6 MB FP16 → 6.9 MB FP32 per language, inference was slower
+(single-threaded SIMD), and the export needed graph workarounds (int64→i32
+casts, single-output assumption). Written up in
+[2026-05-27_PLAN_POST_RTEN.md](2026-05-27_PLAN_POST_RTEN.md). Superseded by the
+2026-06-01 jsep finding; kept as a recorded spike, not merged.
+
+## 2026-05-19 — v0.5.0: clean-break browser API reshape
+
+Replaced the v0.2.0 integration workaround with a ~10-line consumer setup:
+`new DittliTTS({ language, assetBase })` + `tts.play(text)`. The class owns the
+`AudioContext` and is AbortSignal-aware; `synthesize()` exposes pure inference.
+Removed the old `register*` / `modelUrl` / WAV-bytes `speak()` surface (no shim).
+Assets relocated to `assets/<lang>/`. `src/ort.js` established as the single
+`onnxruntime-web` touchpoint; the copy script's *intent* was to drop the JSEP
+variant (26 → 13 MB) — though the default-entry import kept pulling jsep until
+the 2026-06-01 fix. Language packs became `peerDependency` of core; `.d.ts`
+shipped from every package. 58/58 vitest (happy-dom). Tagged `v0.5.0`. Roadmap
+captured in [2026-05-19_PLAN_POST_V040.md](2026-05-19_PLAN_POST_V040.md).
+
+## 2026-05-18 — v0.4.0: asset layout + consumer ergonomics
+
+Clean asset layout, removal of module-level `new URL(..., import.meta.url)`
+(which had blocked English under Vite dep pre-bundling), and the consumer-side
+ergonomics that v0.5.0 built on. Design rationale in
+[2026-05-18_PLAN_V040.md](2026-05-18_PLAN_V040.md).
+
+## 2026-04-30 — npm workspace split (v0.1.0 → v0.2.0)
+
+Split the single package into a workspace: `@dittli/tts-core` (ONNX engine +
+CLI), `@dittli/tts-en` (English G2P, CMU dict, neural fallback), `@dittli/tts-de`
+(German rules). Retargeted the build from Node to the browser. Published `0.1.0`,
+then `0.2.0` (the last public release before the v0.5.0 clean break; `0.3.x`/
+`0.4.x` were skipped on npm).
+
+## 2026-04-28 — German implementation (Phases 1–5)
+
+Added German alongside the English-only base model. Summary (full detail in
+[2026-04-28_PROGRESS.md](2026-04-28_PROGRESS.md) and
+[2026-04-28_PLAN_DE.md](2026-04-28_PLAN_DE.md)):
+
+- **Phase 1** — symbol-table extension (`de_symbols`, `num_de_tones=1`) +
+  checkpoint embedding remapper; 219-symbol English snapshot saved.
+- **Phase 2** — Python + JS G2P, parity-tested 805/805.
+- **Phase 3** — training infra: `forward()`, MPD discriminator, losses, audio
+  module, Thorsten dataset + preprocess, single-GPU AMP trainer, fine-tune.
+- **Phase 4** — browser multi-language support (metadata-driven G2P dispatch).
+- **Phase 5** — portable, sidecar-aware ONNX export.
+
+## 2026-04 — Rename + restructure (TinyTTS → Dittli TTS)
+
+Renamed `tiny_tts/` → `dittli_tts/`, reorganised into a `src/` layout with a
+training/inference split, moved dev tools into `tools/` and historical docs into
+`docs/`, dropped `requirements.txt` for `pyproject.toml` + `uv`, added Biome
+(JS) and Ruff (Python) linting, and added a full pytest suite (unit/parity/
+integration/slow). Replaced a mismatched checkpoint (`hidden_channels=80`) with
+the correct `hidden_channels=32` checkpoint. Added `AGENTS.md`.
+
+---
+
+# Appendix: German training session log — 2026-04-29
 
 Chronological session log: from a partially-implemented German pipeline
 to a trained, exported, browser-verified German TTS model. Captured here
-as an archival record; for current repo state see [PROGRESS.md](PROGRESS.md),
-for the original plan see [PLAN_DE.md](PLAN_DE.md), and for the cloud
-training guide see [TRAINING_DE.md](TRAINING_DE.md).
+as an archival record; for current repo state see
+[2026-04-28_PROGRESS.md](2026-04-28_PROGRESS.md),
+for the original plan see [2026-04-28_PLAN_DE.md](2026-04-28_PLAN_DE.md), and for the cloud
+training guide see [2026-04-28_TRAINING_DE.md](2026-04-28_TRAINING_DE.md).
 
 ## Goal
 

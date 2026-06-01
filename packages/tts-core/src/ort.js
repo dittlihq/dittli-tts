@@ -6,7 +6,13 @@
  * lives in exactly one place.
  */
 
-import * as ort from "onnxruntime-web";
+// Import the WASM-only entry point, NOT the default "onnxruntime-web".
+// The default entry's loader hard-references `ort-wasm-simd-threaded.jsep.wasm`
+// (~25 MB, the WebGPU/JSEP build) and fetches it at runtime even though we only
+// use the CPU `wasm` execution provider. The `/wasm` subpath references the
+// non-jsep `ort-wasm-simd-threaded.wasm` (~12 MB) — which is the only binary
+// `scripts/copy-ort-wasm.js` ships — and pulls a smaller JS bundle too.
+import * as ort from "onnxruntime-web/wasm";
 
 import { _abortError } from "./internal.js";
 

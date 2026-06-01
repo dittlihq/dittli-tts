@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("onnxruntime-web", () => {
+vi.mock("onnxruntime-web/wasm", () => {
   class FakeTensor {
     constructor(type, data, shape) {
       this.type = type;

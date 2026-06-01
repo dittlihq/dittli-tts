@@ -6,7 +6,7 @@
  *
  * The 4.3 MB weights file is fetched lazily on first use to keep the JS
  * bundle small. The URL is resolved from `assetBase` at fetch time, not
- * at module load — see PLAN_V040.md.
+ * at module load — see docs/2026-05-18_PLAN_V040.md.
  */
 
 let _model = null;

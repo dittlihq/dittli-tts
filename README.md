@@ -136,7 +136,7 @@ python -m dittli_tts.inference.engine \
 
 ## Training
 
-See [docs/TRAINING_DE.md](docs/TRAINING_DE.md) for the full cloud training guide (Modal, Kaggle, Vast.ai).
+See [docs/2026-04-28_TRAINING_DE.md](docs/2026-04-28_TRAINING_DE.md) for the full cloud training guide (Modal, Kaggle, Vast.ai).
 
 **German fine-tune from the English checkpoint:**
 
