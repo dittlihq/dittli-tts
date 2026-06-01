@@ -12,10 +12,12 @@ in sync.
 Output phonemes use IPA tokens that already exist in dittli_tts.text.symbols
 (after appending "yː" to de_symbols). All German tones are 0 (single-tone).
 """
+
 from __future__ import annotations
 
 from .german_utils.abbreviations import expand_abbreviations
 from .german_utils.number_norm import normalize_numbers
+from .initialisms import expand_initialisms
 from .symbols import symbols as _SYMBOLS
 
 # Common loanwords whose pronunciation deviates from German rules.
@@ -37,7 +39,7 @@ EXCEPTION_DICT: dict[str, list[str]] = {
     "charakter": ["k", "a", "ʁ", "a", "k", "t", "ɐ"],
     "china": ["ç", "i", "ː", "n", "a"],
     "chemie": ["ç", "e", "m", "i", "ː"],
-    "und": ["ʊ", "n", "t"],          # final-devoicing -d → -t
+    "und": ["ʊ", "n", "t"],  # final-devoicing -d → -t
     "ist": ["ɪ", "s", "t"],
     "die": ["d", "i", "ː"],
     "der": ["d", "e", "ː", "ɐ"],
@@ -62,16 +64,49 @@ EXCEPTION_DICT: dict[str, list[str]] = {
 
 # Common stem-prefixes used to detect syllable onsets for st-/sp- → ʃt-/ʃp-
 PREFIXES = (
-    "ab", "an", "auf", "aus", "be", "ein", "ent", "er", "ge",
-    "miss", "mit", "nach", "ver", "vor", "weg", "zer", "zu",
-    "über", "unter",
+    "ab",
+    "an",
+    "auf",
+    "aus",
+    "be",
+    "ein",
+    "ent",
+    "er",
+    "ge",
+    "miss",
+    "mit",
+    "nach",
+    "ver",
+    "vor",
+    "weg",
+    "zer",
+    "zu",
+    "über",
+    "unter",
 )
 
 # Loanword v-list (v → /v/ instead of default /f/)
 LOANWORD_V_FRAGMENTS = (
-    "vase", "virus", "violin", "vital", "vakuum", "vegan", "vegetar",
-    "vibri", "video", "visit", "vulkan", "vulgar", "vulkan", "veterin",
-    "vampir", "vanille", "vatikan", "venedig", "vers", "veto",
+    "vase",
+    "virus",
+    "violin",
+    "vital",
+    "vakuum",
+    "vegan",
+    "vegetar",
+    "vibri",
+    "video",
+    "visit",
+    "vulkan",
+    "vulgar",
+    "vulkan",
+    "veterin",
+    "vampir",
+    "vanille",
+    "vatikan",
+    "venedig",
+    "vers",
+    "veto",
 )
 
 # Vowels used in context-sensitive lookups
@@ -137,11 +172,7 @@ def s_rule(word: str, i: int) -> list[str]:
     # voiced /z/ at word start before a vowel, or between vowels
     if i == 0 and i + 1 < len(word) and word[i + 1] in _ALL_VOWELS:
         return ["z"]
-    if (
-        0 < i < len(word) - 1
-        and word[i - 1] in _ALL_VOWELS
-        and word[i + 1] in _ALL_VOWELS
-    ):
+    if 0 < i < len(word) - 1 and word[i - 1] in _ALL_VOWELS and word[i + 1] in _ALL_VOWELS:
         return ["z"]
     return ["s"]
 
@@ -176,7 +207,7 @@ RULES: list[tuple[str, list[str] | str]] = [
     ("dsch", ["d", "ʒ"]),
     # 3 chars
     ("sch", ["ʃ"]),
-    ("chs", "chs"),       # context-sensitive
+    ("chs", "chs"),  # context-sensitive
     ("ung", ["ʊ", "ŋ"]),  # -ung suffix common
     # 2 chars — diphthongs and digraphs
     ("ei", ["a", "ɪ"]),
@@ -201,15 +232,15 @@ RULES: list[tuple[str, list[str] | str]] = [
     ("ee", ["e", "ː"]),
     ("oo", ["o", "ː"]),
     # 2 chars — consonant clusters
-    ("ch", "ch"),         # context-sensitive
+    ("ch", "ch"),  # context-sensitive
     ("ck", ["k"]),
     ("ng", ["ŋ"]),
     ("nk", ["ŋ", "k"]),
     ("pf", ["p", "f"]),
     ("ph", ["f"]),
     ("qu", ["k", "v"]),
-    ("st", "st"),         # context-sensitive
-    ("sp", "sp"),         # context-sensitive
+    ("st", "st"),  # context-sensitive
+    ("sp", "sp"),  # context-sensitive
     ("tz", ["ts"]),
     ("ts", ["ts"]),
     # doubled consonants → single (preceding vowel is short by orthography)
@@ -246,11 +277,11 @@ RULES: list[tuple[str, list[str] | str]] = [
     ("o", ["o"]),
     ("p", ["p"]),
     ("q", ["k"]),
-    ("r", "r"),           # context-sensitive
-    ("s", "s"),            # context-sensitive
+    ("r", "r"),  # context-sensitive
+    ("s", "s"),  # context-sensitive
     ("t", ["t"]),
     ("u", ["u"]),
-    ("v", "v"),            # context-sensitive
+    ("v", "v"),  # context-sensitive
     ("w", ["v"]),
     ("x", ["k", "s"]),
     ("y", ["yː"]),
@@ -293,6 +324,7 @@ def _map_phoneme(ph: str) -> str:
 
 
 def normalize_text(text: str) -> str:
+    text = expand_initialisms(text, "DE")
     text = expand_abbreviations(text)
     text = normalize_numbers(text)
     return text

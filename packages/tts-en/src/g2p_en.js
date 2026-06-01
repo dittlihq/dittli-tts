@@ -11,6 +11,45 @@
 
 import { predict as _g2pPredict, prepare as _prepareG2pPredict } from "./g2p_predict.js";
 
+// Initialism expansion — mirrors dittli_tts/text/initialisms.py (EN table).
+// Runs of >=2 uppercase letters are spelled out as letter-name words so the
+// word-level G2P pronounces "FBI" as "ef bee eye" instead of garbling "fbi".
+const _EN_LETTER_NAMES = {
+  A: "ay",
+  B: "bee",
+  C: "see",
+  D: "dee",
+  E: "ee",
+  F: "ef",
+  G: "jee",
+  H: "aitch",
+  I: "eye",
+  J: "jay",
+  K: "kay",
+  L: "el",
+  M: "em",
+  N: "en",
+  O: "oh",
+  P: "pee",
+  Q: "cue",
+  R: "ar",
+  S: "ess",
+  T: "tee",
+  U: "you",
+  V: "vee",
+  W: "double you",
+  X: "ex",
+  Y: "why",
+  Z: "zee",
+};
+
+function expandInitialisms(text) {
+  return text.replace(/[A-Z]{2,}/g, (run) => {
+    const spelled = Array.from(run, (ch) => _EN_LETTER_NAMES[ch] ?? ch).join(" ");
+    return ` ${spelled} `;
+  });
+}
+
 let _cmu = null;
 let _cmuPromise = null;
 
@@ -71,7 +110,7 @@ function _mapPhoneme(ph, symbolSet) {
 
 export function graphemeToPhonemeEN(text, opts = {}) {
   const { symbolSet = null, padStartEnd = true } = opts;
-  text = text.toLowerCase().trim();
+  text = expandInitialisms(text).toLowerCase().trim();
   const words = text.split(/\s+/).filter((w) => w.length > 0);
   const allPhones = [];
   const allTones = [];

@@ -172,8 +172,50 @@ export function expandAbbreviations(text) {
   return text;
 }
 
+// Initialism expansion — mirrors dittli_tts/text/initialisms.py (DE table).
+// Runs of >=2 uppercase letters are spelled out as German letter-name words so
+// "TV" becomes "te vau" instead of the silent consonant pair ['t', 'f'].
+const _DE_LETTER_NAMES = {
+  A: "a",
+  B: "be",
+  C: "ze",
+  D: "de",
+  E: "e",
+  F: "ef",
+  G: "ge",
+  H: "ha",
+  I: "i",
+  J: "jot",
+  K: "ka",
+  L: "el",
+  M: "em",
+  N: "en",
+  O: "o",
+  P: "pe",
+  Q: "ku",
+  R: "er",
+  S: "es",
+  T: "te",
+  U: "u",
+  V: "vau",
+  W: "we",
+  X: "iks",
+  Y: "ypsilon",
+  Z: "zet",
+  Ä: "ä",
+  Ö: "ö",
+  Ü: "ü",
+};
+
+export function expandInitialisms(text) {
+  return text.replace(/[A-ZÄÖÜ]{2,}/g, (run) => {
+    const spelled = Array.from(run, (ch) => _DE_LETTER_NAMES[ch] ?? ch).join(" ");
+    return ` ${spelled} `;
+  });
+}
+
 export function normalizeText(text) {
-  return normalizeNumbers(expandAbbreviations(text));
+  return normalizeNumbers(expandAbbreviations(expandInitialisms(text)));
 }
 
 // ---------------------------------------------------------------------------
