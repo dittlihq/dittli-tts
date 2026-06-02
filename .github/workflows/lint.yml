@@ -1,6 +1,18 @@
 name: Lint Check
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [develop]
+  pull_request:
+
+# Least privilege: linting only reads the tree.
+permissions:
+  contents: read
+
+# Cancel superseded runs for the same ref (e.g. rapid pushes to a PR).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
@@ -26,11 +38,13 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install Python dev dependencies
-        run: uv sync --extra dev
+      # Only the `lint` dependency group (ruff) — skips the heavy base deps
+      # (torch etc.), which static analysis doesn't need.
+      - name: Install ruff
+        run: uv sync --only-group lint
 
       - name: Lint Python (ruff)
-        run: uv run ruff check .
+        run: uv run --no-sync ruff check .
 
       - name: Check Python formatting (ruff)
-        run: uv run ruff format --check .
+        run: uv run --no-sync ruff format --check .

@@ -33,6 +33,14 @@ dev = [
     "ty",
 ]
 
+# PEP 735 dependency group, installed in isolation by the lint CI job via
+# `uv sync --only-group lint` — pulls only ruff, not the project's heavy base
+# dependencies (torch etc.), which are irrelevant to static analysis.
+[dependency-groups]
+lint = [
+    "ruff",
+]
+
 [project.scripts]
 dittli-tts = "dittli_tts.inference.engine:main"
 

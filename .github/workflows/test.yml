@@ -1,6 +1,18 @@
 name: Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [develop]
+  pull_request:
+
+# Least privilege: the test suite only reads the tree.
+permissions:
+  contents: read
+
+# Cancel superseded runs for the same ref (e.g. rapid pushes to a PR).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   javascript:
