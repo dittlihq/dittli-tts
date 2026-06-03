@@ -62,6 +62,13 @@ graphs trivially inspectable.
   carries a 33 % tax that the binary drops, then FP16 halves it).
 - **Code:** delete the bespoke JS GRU; both G2P and TTS now go through one
   SIMD-vectorised runtime (a small per-utterance speedup for OOV words).
+- **Reusable across languages:** build the host greedy-loop
+  **language-agnostically** (a generic `encoder.onnx` + `decoder_step.onnx`
+  driver, parameterised by the pack's grapheme/phoneme tables) rather than as
+  English-only glue. Any future language that wants a neural G2P then ships only
+  its own weights — no new hand-ported JS, no new parity suite. This is a
+  deliberate choice to keep step 1 friendly to contributors (see "Impact on
+  adding new languages" below).
 - **No model retraining, no quality change** — bit-identical phonemes, because
   the weights and math are unchanged.
 
@@ -140,6 +147,99 @@ char front-end + new vocoder head, encoder/flow/duration warm-started).
 
 End state: a language pack is `{metadata, model.onnx}` at **~3 MB total**, one
 runtime, one graph, no bespoke G2P JS and no multi-megabyte dictionaries.
+
+---
+
+## Impact on adding new languages
+
+The architecture stays **per-language packs** throughout (a separate
+`model.onnx` per language) — none of these steps imply or require a single
+shared multilingual model; that is a separate, larger decision.
+
+### What adding a language costs today
+
+German required: (a) phoneme symbols in the shared table; (b) a G2P written
+**twice** — Python (`german.py`) *and* a hand-ported JS copy (`g2p_de.js`);
+(c) a generated rules JSON; (d) an **805-word Python↔JS parity suite** to keep
+the two in sync; (e) tones / language IDs; (f) a fine-tuned checkpoint; (g) a
+shipped pack `{metadata, model, g2p assets}`. The brittle, expensive parts are
+(b) + (d): the duplicated implementation and its parity test.
+
+### How each step changes that
+
+- **Step 1 — neutral-to-positive, and reusable.** The English-specific parts
+  (CMU trim, the GRU weights) don't touch other languages, but the
+  **generic `encoder.onnx` + `decoder_step.onnx` + host greedy-loop becomes
+  language-agnostic G2P infrastructure.** A future language whose orthography is
+  irregular enough to want a neural G2P ships only its weights through that same
+  loop — removing the JS-port and parity-suite tax for those languages, without
+  forcing anything on rule-based ones.
+
+- **Step 2 — the big lever, and it cuts both ways.**
+  - *Win:* a pack becomes `{metadata, model.onnx}` — **no shipped G2P, no JS
+    port, no parity suite.** Items (b), (c), (d) and the G2P assets in (g) all
+    disappear. This is the single largest reduction in per-language
+    *engineering/maintenance* effort.
+  - *The catch:* the front-end is trained by **distilling against a teacher G2P
+    for that language**, so real linguistic G2P knowledge is still required —
+    but only **at training time, never at ship time**. For a brand-new language
+    you first build a teacher (rules, or borrow `espeak-ng` / `phonemizer`)
+    purely to generate targets; it never ships and never needs a JS twin. The
+    cost **moves from "maintain two G2P implementations forever" to "have a G2P
+    once, during training."** "G2P-free packs" is not "no linguistic work."
+  - *Bar shifts from engineering to ML:* adding a language now **requires a
+    training run** (distillation + a blind listening check) rather than "write
+    rules + fine-tune." Tone-bearing or phonologically rich languages lean
+    harder on data quality; rule-based additions are more predictable than
+    char-level ones.
+
+- **Step 3 — language-agnostic.** Vocoder / sample-rate is about audio
+  synthesis, not text. No effect on the add-language flow beyond new fine-tunes
+  targeting the new vocoder/rate (smaller, faster per language).
+
+### Net
+
+The end state genuinely simplifies adding a language at the **packaging/runtime
+layer** (no JS G2P, no parity suite, `{metadata, model}` only) — exactly the
+part that made German painful — while moving the linguistic work into the
+**training pipeline**, where it only has to be done once and never shipped.
+
+---
+
+## Contributor experience — an "Add a language" guide (deliverable)
+
+Making this **as easy as possible for contributors** is an explicit goal of the
+work, not an afterthought. Each step must land with the docs and scaffolding a
+new contributor needs, so "add a language" is a followable recipe rather than
+tribal knowledge reverse-engineered from the German commit history.
+
+**Deliverable: `docs/ADDING_A_LANGUAGE.md`** (written alongside the code, kept
+current as the steps land), containing:
+
+1. **A decision tree for the G2P** — rule-based (like German) vs. neural-ONNX
+   (step 1 infra) vs. borrow an external phonemiser as a step-2 teacher — with
+   the trade-offs and when to pick each.
+2. **A concrete checklist** mirroring the real touch-points, each as a copy-able
+   command:
+   - register the language: symbols + tone offset + language ID
+     (`src/dittli_tts/text/symbols.py`), then `npm run g2p:metadata`.
+   - provide a G2P (rules JSON, or train + `scripts/export_g2p_onnx.py` for the
+     neural path).
+   - data + fine-tune (`scripts/finetune_*.py`, warm-start from an existing
+     checkpoint) and export (`scripts/export_onnx`).
+   - ship the pack and add a smoke test.
+3. **A scaffolding command** — e.g. `scripts/new_language.py <code>` that
+   stamps out the pack skeleton (`packages/tts-<code>/`), a metadata stub, and a
+   placeholder smoke test, so a contributor starts from a working tree, not a
+   blank page.
+4. **What each step removes from the checklist**, so the guide shrinks as the
+   work lands: step 1 drops "hand-port the G2P to JS + write a parity suite" for
+   neural-G2P languages; step 2 drops the entire G2P column, leaving essentially
+   "supply data + run the fine-tune."
+
+**Success criterion:** a contributor can add a new language by following the
+guide end-to-end without reading the engine internals, and the post-step-2 path
+is "bring a dataset and a teacher G2P; run one training command."
 
 ## Validation gates
 
