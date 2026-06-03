@@ -108,7 +108,17 @@ class DecoderStep(nn.Module):
         return self.fc(h_new), h_new
 
 
-def export(w: dict, out_dir: Path) -> tuple[Path, Path]:
+def _to_fp16(path: Path) -> None:
+    """Convert an ONNX file to FP16 in place, keeping I/O types FP32 so the host
+    loop passes plain float32 tensors across the encoder→decoder boundary."""
+    import onnx
+    from onnxruntime.transformers.float16 import convert_float_to_float16
+
+    m = onnx.load(str(path))
+    onnx.save(convert_float_to_float16(m, keep_io_types=True), str(path))
+
+
+def export(w: dict, out_dir: Path, fp16: bool = False) -> tuple[Path, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     enc_path = out_dir / "g2p_encoder.onnx"
     dec_path = out_dir / "g2p_decoder_step.onnx"
@@ -135,7 +145,29 @@ def export(w: dict, out_dir: Path) -> tuple[Path, Path]:
         opset_version=14,
         dynamo=False,
     )
+
+    if fp16:
+        _to_fp16(enc_path)
+        _to_fp16(dec_path)
     return enc_path, dec_path
+
+
+def write_vocab(w: dict, out_dir: Path) -> Path:
+    """Sidecar the host greedy-loop needs: grapheme→id input table, id→phoneme
+    output table, and the start/eos token ids. Kept tiny and language-agnostic."""
+    vocab_path = out_dir / "g2p_vocab.json"
+    vocab_path.write_text(
+        json.dumps(
+            {
+                "graphemes": w["graphemes"],
+                "phonemes": w["phonemes"],
+                "start_id": START_ID,
+                "eos_id": EOS_ID,
+                "max_decode": MAX_DECODE,
+            }
+        )
+    )
+    return vocab_path
 
 
 def greedy_decode_onnx(word: str, enc_sess, dec_sess, g2idx, phonemes) -> list[str]:
@@ -189,19 +221,33 @@ def verify(enc_path: Path, dec_path: Path, w: dict) -> int:
     return 1 if mismatches else 0
 
 
+EN_ASSETS = REPO_ROOT / "packages" / "tts-en" / "assets" / "en"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="/tmp/g2p_onnx", help="output dir for the ONNX graphs")
+    ap.add_argument(
+        "--assets",
+        action="store_true",
+        help=f"write the ship-able assets into {EN_ASSETS} instead of --out",
+    )
+    ap.add_argument("--fp16", action="store_true", help="convert the graphs to FP16")
     ap.add_argument("--verify", action="store_true", help="check parity against g2p_en")
     args = ap.parse_args()
 
+    out_dir = EN_ASSETS if args.assets else Path(args.out)
     w = _load_weights(G2P_JSON)
-    enc_path, dec_path = export(w, Path(args.out))
+    enc_path, dec_path = export(w, out_dir, fp16=args.fp16)
+    vocab_path = write_vocab(w, out_dir)
     enc_mb = os.path.getsize(enc_path) / 1e6
     dec_mb = os.path.getsize(dec_path) / 1e6
+    vocab_kb = os.path.getsize(vocab_path) / 1e3
     json_mb = os.path.getsize(G2P_JSON) / 1e6
-    print(f"exported {enc_path.name} ({enc_mb:.2f} MB) + {dec_path.name} ({dec_mb:.2f} MB)")
-    print(f"FP32 ONNX total: {enc_mb + dec_mb:.2f} MB  vs  base64 JSON today: {json_mb:.2f} MB")
+    kind = "FP16" if args.fp16 else "FP32"
+    print(f"wrote {enc_path.name} ({enc_mb:.2f} MB) + {dec_path.name} ({dec_mb:.2f} MB)")
+    print(f"      {vocab_path.name} ({vocab_kb:.1f} KB)  [{kind}]")
+    print(f"ONNX total: {enc_mb + dec_mb:.2f} MB  vs  base64 JSON today: {json_mb:.2f} MB")
 
     if args.verify:
         return verify(enc_path, dec_path, w)
