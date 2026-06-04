@@ -21,6 +21,9 @@ Dittli TTS extends the original TinyTTS with German language support, a full adv
 | English | Male (original) | Shipped |
 | German | Thorsten Voice (CC0) | Shipped |
 
+Want to add one? See [docs/ADDING_A_LANGUAGE.md](docs/ADDING_A_LANGUAGE.md) —
+`python scripts/new_language.py <code> --name "<Name>"` scaffolds the pack.
+
 ---
 
 ## Browser (npm)
