@@ -85,12 +85,22 @@ export class Engine {
     });
 
     if (typeof this.pack.g2p.prepare === "function") {
-      await this.pack.g2p.prepare({ assetBase: this.assetBase, signal, onProgress });
+      await this.pack.g2p.prepare({
+        assetBase: this.assetBase,
+        signal,
+        onProgress,
+        // Injected so a pack can run a neural G2P on the shared ORT runtime
+        // (see @dittli/tts-core/internal createOnnxG2p) without importing ORT.
+        ort: { createSession, runSession, tensor },
+        executionProviders: this.executionProviders,
+      });
     }
   }
 
-  textToPhonemeIds(text) {
-    const { phones, tones } = this.pack.g2p(text, { symbolSet: this._symbolSet });
+  // `pack.g2p` may be sync (rule-based, e.g. German) or async (ONNX neural
+  // G2P, e.g. English) — awaiting handles both.
+  async textToPhonemeIds(text) {
+    const { phones, tones } = await this.pack.g2p(text, { symbolSet: this._symbolSet });
     const [phoneIds, toneIds, langIds] = _phonemesToIds(phones, tones, this.metadata);
     return {
       phoneIds: _insertBlanks(phoneIds),
@@ -110,7 +120,7 @@ export class Engine {
       sidValue = spk2id[speaker];
     }
 
-    const { phoneIds, toneIds, langIds } = this.textToPhonemeIds(text);
+    const { phoneIds, toneIds, langIds } = await this.textToPhonemeIds(text);
     const seqLen = phoneIds.length;
 
     const feeds = {
