@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("onnxruntime-web", () => {
+vi.mock("onnxruntime-web/wasm", () => {
   class FakeTensor {
     constructor(type, data, shape) {
       this.type = type;
@@ -335,5 +335,37 @@ describe("DittliTTS.preloadWhenIdle", () => {
     });
     expect(tts).toBeInstanceOf(core.DittliTTS);
     expect(tts._engines.has("xx")).toBe(true);
+  });
+});
+
+describe("ORT log suppression", () => {
+  it("raises ORT's log level to 'error' and sessions to severity 3 by default", async () => {
+    vi.resetModules();
+    const ort = await import("../../packages/tts-core/src/ort.js");
+    const ortMod = await import("onnxruntime-web/wasm");
+
+    ort.configureOrt({ wasmPaths: "/tts/ort/" });
+    expect(ortMod.env.logLevel).toBe("error");
+
+    await ort.createSession(new Uint8Array([1, 2, 3]), {});
+    expect(ortMod.InferenceSession.create).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ logSeverityLevel: 3 }),
+    );
+  });
+
+  it("keeps warnings when verbose", async () => {
+    vi.resetModules();
+    const ort = await import("../../packages/tts-core/src/ort.js");
+    const ortMod = await import("onnxruntime-web/wasm");
+
+    ort.configureOrt({ verbose: true });
+    expect(ortMod.env.logLevel).toBe("warning");
+
+    await ort.createSession(new Uint8Array([1, 2, 3]), {});
+    expect(ortMod.InferenceSession.create).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ logSeverityLevel: 0 }),
+    );
   });
 });

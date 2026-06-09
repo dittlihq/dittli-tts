@@ -100,29 +100,21 @@ class VariationalDurationModel(nn.Module):
         self.flows = nn.ModuleList()
         self.flows.append(modules.AffineCoupling(2))
         for i in range(n_flows):
-            self.flows.append(
-                modules.ConvolutionalFlow(2, filter_channels, kernel_size, n_layers=3)
-            )
+            self.flows.append(modules.ConvolutionalFlow(2, filter_channels, kernel_size, n_layers=3))
             self.flows.append(modules.FlipTransform())
 
         self.post_pre = nn.Conv1d(1, filter_channels, 1)
         self.post_proj = nn.Conv1d(filter_channels, filter_channels, 1)
-        self.post_convs = modules.DepthwiseSepConv(
-            filter_channels, kernel_size, n_layers=3, p_dropout=p_dropout
-        )
+        self.post_convs = modules.DepthwiseSepConv(filter_channels, kernel_size, n_layers=3, p_dropout=p_dropout)
         self.post_flows = nn.ModuleList()
         self.post_flows.append(modules.AffineCoupling(2))
         for i in range(4):
-            self.post_flows.append(
-                modules.ConvolutionalFlow(2, filter_channels, kernel_size, n_layers=3)
-            )
+            self.post_flows.append(modules.ConvolutionalFlow(2, filter_channels, kernel_size, n_layers=3))
             self.post_flows.append(modules.FlipTransform())
 
         self.pre = nn.Conv1d(in_channels, filter_channels, 1)
         self.proj = nn.Conv1d(filter_channels, filter_channels, 1)
-        self.convs = modules.DepthwiseSepConv(
-            filter_channels, kernel_size, n_layers=3, p_dropout=p_dropout
-        )
+        self.convs = modules.DepthwiseSepConv(filter_channels, kernel_size, n_layers=3, p_dropout=p_dropout)
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, filter_channels, 1)
 
@@ -143,10 +135,7 @@ class VariationalDurationModel(nn.Module):
             h_w = self.post_pre(w)
             h_w = self.post_convs(h_w, x_mask)
             h_w = self.post_proj(h_w) * x_mask
-            e_q = (
-                torch.randn(w.size(0), 2, w.size(2)).to(device=x.device, dtype=x.dtype)
-                * x_mask
-            )
+            e_q = torch.randn(w.size(0), 2, w.size(2)).to(device=x.device, dtype=x.dtype) * x_mask
             z_q = e_q
             for flow in self.post_flows:
                 z_q, logdet_q = flow(z_q, x_mask, g=(x + h_w))
@@ -154,13 +143,8 @@ class VariationalDurationModel(nn.Module):
             z_u, z1 = torch.split(z_q, [1, 1], 1)
             u = torch.sigmoid(z_u) * x_mask
             z0 = (w - u) * x_mask
-            logdet_tot_q += torch.sum(
-                (F.logsigmoid(z_u) + F.logsigmoid(-z_u)) * x_mask, [1, 2]
-            )
-            logq = (
-                torch.sum(-0.5 * (math.log(2 * math.pi) + (e_q**2)) * x_mask, [1, 2])
-                - logdet_tot_q
-            )
+            logdet_tot_q += torch.sum((F.logsigmoid(z_u) + F.logsigmoid(-z_u)) * x_mask, [1, 2])
+            logq = torch.sum(-0.5 * (math.log(2 * math.pi) + (e_q**2)) * x_mask, [1, 2]) - logdet_tot_q
 
             logdet_tot = 0
             z0, logdet = self.log_flow(z0, x_mask)
@@ -169,18 +153,12 @@ class VariationalDurationModel(nn.Module):
             for flow in flows:
                 z, logdet = flow(z, x_mask, g=x, reverse=reverse)
                 logdet_tot = logdet_tot + logdet
-            nll = (
-                torch.sum(0.5 * (math.log(2 * math.pi) + (z**2)) * x_mask, [1, 2])
-                - logdet_tot
-            )
+            nll = torch.sum(0.5 * (math.log(2 * math.pi) + (z**2)) * x_mask, [1, 2]) - logdet_tot
             return nll + logq
         else:
             flows = list(reversed(self.flows))
             flows = flows[:-2] + [flows[-1]]
-            z = (
-                torch.randn(x.size(0), 2, x.size(2)).to(device=x.device, dtype=x.dtype)
-                * noise_scale
-            )
+            z = torch.randn(x.size(0), 2, x.size(2)).to(device=x.device, dtype=x.dtype) * noise_scale
             for flow in flows:
                 z = flow(z, x_mask, g=x, reverse=reverse)
             z0, z1 = torch.split(z, [1, 1], 1)
@@ -189,9 +167,7 @@ class VariationalDurationModel(nn.Module):
 
 
 class DurationEstimator(nn.Module):
-    def __init__(
-        self, in_channels, filter_channels, kernel_size, p_dropout, gin_channels=0
-    ):
+    def __init__(self, in_channels, filter_channels, kernel_size, p_dropout, gin_channels=0):
         super().__init__()
 
         self.in_channels = in_channels
@@ -201,13 +177,9 @@ class DurationEstimator(nn.Module):
         self.gin_channels = gin_channels
 
         self.drop = nn.Dropout(p_dropout)
-        self.conv_1 = nn.Conv1d(
-            in_channels, filter_channels, kernel_size, padding=kernel_size // 2
-        )
+        self.conv_1 = nn.Conv1d(in_channels, filter_channels, kernel_size, padding=kernel_size // 2)
         self.norm_1 = modules.ChannelNorm(filter_channels)
-        self.conv_2 = nn.Conv1d(
-            filter_channels, filter_channels, kernel_size, padding=kernel_size // 2
-        )
+        self.conv_2 = nn.Conv1d(filter_channels, filter_channels, kernel_size, padding=kernel_size // 2)
         self.norm_2 = modules.ChannelNorm(filter_channels)
         self.proj = nn.Conv1d(filter_channels, 1, 1)
 
@@ -283,19 +255,11 @@ class PhonemeEncoder(nn.Module):
     def forward(self, x, x_lengths, tone, language, bert, ja_bert, g=None):
         bert_emb = self.bert_proj(bert).transpose(1, 2)
         ja_bert_emb = self.ja_bert_proj(ja_bert).transpose(1, 2)
-        x = (
-            self.emb(x)
-            + self.tone_emb(tone)
-            + self.language_emb(language)
-            + bert_emb
-            + ja_bert_emb
-        ) * math.sqrt(
+        x = (self.emb(x) + self.tone_emb(tone) + self.language_emb(language) + bert_emb + ja_bert_emb) * math.sqrt(
             self.hidden_channels
         )
         x = torch.transpose(x, 1, -1)
-        x_mask = torch.unsqueeze(commons.create_length_mask(x_lengths, x.size(2)), 1).to(
-            x.dtype
-        )
+        x_mask = torch.unsqueeze(commons.create_length_mask(x_lengths, x.size(2)), 1).to(x.dtype)
 
         x = self.encoder(x * x_mask, x_mask, g=g)
         stats = self.proj(x) * x_mask
@@ -380,9 +344,7 @@ class LatentEncoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths, g=None, tau=1.0):
-        x_mask = torch.unsqueeze(commons.create_length_mask(x_lengths, x.size(2)), 1).to(
-            x.dtype
-        )
+        x_mask = torch.unsqueeze(commons.create_length_mask(x_lengths, x.size(2)), 1).to(x.dtype)
         x = self.pre(x) * x_mask
         x = self.enc(x, x_mask, g=g)
         stats = self.proj(x) * x_mask
@@ -406,9 +368,7 @@ class WaveformDecoder(torch.nn.Module):
         super().__init__()
         self.num_kernels = len(resblock_kernel_sizes)
         self.num_upsamples = len(upsample_rates)
-        self.conv_pre = Conv1d(
-            initial_channel, upsample_initial_channel, 7, 1, padding=3
-        )
+        self.conv_pre = Conv1d(initial_channel, upsample_initial_channel, 7, 1, padding=3)
         resblock = modules.ConvResBlock if resblock == "1" else modules.ConvResBlockLight
 
         self.ups = nn.ModuleList()
@@ -428,9 +388,7 @@ class WaveformDecoder(torch.nn.Module):
         self.resblocks = nn.ModuleList()
         for i in range(len(self.ups)):
             ch = upsample_initial_channel // (2 ** (i + 1))
-            for j, (k, d) in enumerate(
-                zip(resblock_kernel_sizes, resblock_dilation_sizes)
-            ):
+            for j, (k, d) in enumerate(zip(resblock_kernel_sizes, resblock_dilation_sizes)):
                 self.resblocks.append(resblock(ch, k, d))
 
         self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
@@ -559,7 +517,7 @@ class VoiceSynthesizer(nn.Module):
         num_languages=None,
         num_tones=None,
         norm_refenc=False,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.n_vocab = n_vocab
@@ -581,9 +539,7 @@ class VoiceSynthesizer(nn.Module):
         self.n_speakers = n_speakers
         self.gin_channels = gin_channels
         self.n_layers_trans_flow = n_layers_trans_flow
-        self.use_spk_conditioned_encoder = kwargs.get(
-            "use_spk_conditioned_encoder", True
-        )
+        self.use_spk_conditioned_encoder = kwargs.get("use_spk_conditioned_encoder", True)
         self.use_sdp = use_sdp
         self.use_noise_scaled_mas = kwargs.get("use_noise_scaled_mas", False)
         self.mas_noise_scale_initial = kwargs.get("mas_noise_scale_initial", 0.01)
@@ -647,12 +603,8 @@ class VoiceSynthesizer(nn.Module):
                 n_flow_layer,
                 gin_channels=gin_channels,
             )
-        self.sdp = VariationalDurationModel(
-            hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels
-        )
-        self.dp = DurationEstimator(
-            hidden_channels, 256, 3, 0.5, gin_channels=gin_channels
-        )
+        self.sdp = VariationalDurationModel(hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
+        self.dp = DurationEstimator(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
 
         if n_speakers > 0:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
@@ -690,39 +642,23 @@ class VoiceSynthesizer(nn.Module):
             g = self.ref_enc(y.transpose(1, 2)).unsqueeze(-1)
         g_p = None if self.use_vc else g
 
-        x_enc, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, g=g_p
-        )
+        x_enc, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert, ja_bert, g=g_p)
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
 
         with torch.no_grad():
             s_p_sq_r = torch.exp(-2 * logs_p)
-            neg_cent1 = torch.sum(
-                -0.5 * math.log(2 * math.pi) - logs_p, [1], keepdim=True
-            )  # [b, 1, t_x]
-            neg_cent2 = torch.matmul(
-                -0.5 * (z_p ** 2).transpose(1, 2), s_p_sq_r
-            )  # [b, t_y, t_x]
-            neg_cent3 = torch.matmul(
-                z_p.transpose(1, 2), (m_p * s_p_sq_r)
-            )  # [b, t_y, t_x]
-            neg_cent4 = torch.sum(
-                -0.5 * (m_p ** 2) * s_p_sq_r, [1], keepdim=True
-            )  # [b, 1, t_x]
+            neg_cent1 = torch.sum(-0.5 * math.log(2 * math.pi) - logs_p, [1], keepdim=True)  # [b, 1, t_x]
+            neg_cent2 = torch.matmul(-0.5 * (z_p**2).transpose(1, 2), s_p_sq_r)  # [b, t_y, t_x]
+            neg_cent3 = torch.matmul(z_p.transpose(1, 2), (m_p * s_p_sq_r))  # [b, t_y, t_x]
+            neg_cent4 = torch.sum(-0.5 * (m_p**2) * s_p_sq_r, [1], keepdim=True)  # [b, 1, t_x]
             neg_cent = neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4
 
             if self.use_noise_scaled_mas:
-                eps = (
-                    torch.std(neg_cent)
-                    * torch.randn_like(neg_cent)
-                    * self.current_mas_noise_scale
-                )
+                eps = torch.std(neg_cent) * torch.randn_like(neg_cent) * self.current_mas_noise_scale
                 neg_cent = neg_cent + eps
 
-            attn_mask = (
-                torch.unsqueeze(x_mask, 2) * torch.unsqueeze(y_mask, -1)
-            ).squeeze(1)  # [b, t_y, t_x]
+            attn_mask = (torch.unsqueeze(x_mask, 2) * torch.unsqueeze(y_mask, -1)).squeeze(1)  # [b, t_y, t_x]
             attn = alignment.viterbi_decode(neg_cent, attn_mask).detach()
 
         # Phoneme durations from the alignment.
@@ -732,17 +668,13 @@ class VoiceSynthesizer(nn.Module):
 
         logw_pred = self.dp(x_enc, x_mask, g=g)
         logw_target = torch.log(w + 1e-6) * x_mask
-        l_length_dp = torch.sum(
-            (logw_pred - logw_target) ** 2 * x_mask
-        ) / torch.sum(x_mask)
+        l_length_dp = torch.sum((logw_pred - logw_target) ** 2 * x_mask) / torch.sum(x_mask)
 
         # Expand prior to T_y via the alignment.
         m_p_exp = torch.matmul(attn, m_p.transpose(1, 2)).transpose(1, 2)
         logs_p_exp = torch.matmul(attn, logs_p.transpose(1, 2)).transpose(1, 2)
 
-        z_slice, ids_slice = commons.random_segments(
-            z, y_lengths, self.segment_size
-        )
+        z_slice, ids_slice = commons.random_segments(z, y_lengths, self.segment_size)
         o = self.dec(z_slice, g=g)
         return (
             o,
@@ -781,28 +713,20 @@ class VoiceSynthesizer(nn.Module):
             g_p = None
         else:
             g_p = g
-        x, m_p, logs_p, x_mask = self.enc_p(
-            x, x_lengths, tone, language, bert, ja_bert, g=g_p
-        )
-        logw = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (
-            sdp_ratio
-        ) + self.dp(x, x_mask, g=g) * (1 - sdp_ratio)
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, tone, language, bert, ja_bert, g=g_p)
+        logw = self.sdp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w) * (sdp_ratio) + self.dp(
+            x, x_mask, g=g
+        ) * (1 - sdp_ratio)
         w = torch.exp(logw) * x_mask * length_scale
 
         w_ceil = torch.ceil(w)
         y_lengths = torch.clamp_min(torch.sum(w_ceil, [1, 2]), 1).long()
-        y_mask = torch.unsqueeze(commons.create_length_mask(y_lengths, None), 1).to(
-            x_mask.dtype
-        )
+        y_mask = torch.unsqueeze(commons.create_length_mask(y_lengths, None), 1).to(x_mask.dtype)
         attn_mask = torch.unsqueeze(x_mask, 2) * torch.unsqueeze(y_mask, -1)
         attn = commons.compute_alignment_path(w_ceil, attn_mask)
 
-        m_p = torch.matmul(attn.squeeze(1), m_p.transpose(1, 2)).transpose(
-            1, 2
-        )
-        logs_p = torch.matmul(attn.squeeze(1), logs_p.transpose(1, 2)).transpose(
-            1, 2
-        )
+        m_p = torch.matmul(attn.squeeze(1), m_p.transpose(1, 2)).transpose(1, 2)
+        logs_p = torch.matmul(attn.squeeze(1), logs_p.transpose(1, 2)).transpose(1, 2)
 
         z_p = m_p + torch.randn_like(m_p) * torch.exp(logs_p) * noise_scale
         z = self.flow(z_p, y_mask, g=g, reverse=True)

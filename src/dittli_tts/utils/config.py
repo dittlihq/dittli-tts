@@ -5,7 +5,7 @@ HOP_LENGTH = 512
 SEGMENT_FRAMES = 32
 ADD_BLANK = True
 SPEC_CHANNELS = FILTER_LENGTH // 2 + 1  # 1025
-N_MEL_CHANNELS = 128                      # updated in new checkpoint
+N_MEL_CHANNELS = 128  # updated in new checkpoint
 
 # Speakers
 N_SPEAKERS = 1

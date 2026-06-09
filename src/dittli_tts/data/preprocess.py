@@ -9,6 +9,7 @@ The script writes `{wav}.spec.pt` and `{wav}.phones.pt` next to each wav.
 Failures are surfaced with the offending file path so a few bad rows don't
 silently corrupt the cache.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -16,15 +17,13 @@ import os
 import sys
 import traceback
 
-import torch
-
 from dittli_tts.data.dataset import (
+    _phones_path,
     _read_metadata,
     _spec_path,
-    _phones_path,
     compute_and_cache,
 )
-from dittli_tts.utils.config import SAMPLING_RATE, FILTER_LENGTH, HOP_LENGTH
+from dittli_tts.utils.config import FILTER_LENGTH, HOP_LENGTH, SAMPLING_RATE
 
 
 def main():
@@ -34,10 +33,8 @@ def main():
     p.add_argument("--sr", type=int, default=SAMPLING_RATE)
     p.add_argument("--n-fft", type=int, default=FILTER_LENGTH)
     p.add_argument("--hop", type=int, default=HOP_LENGTH)
-    p.add_argument("--language", default="DE", choices=["DE", "EN"],
-                   help="Language for G2P (default: DE).")
-    p.add_argument("--force", action="store_true",
-                   help="Recompute even if cache files already exist.")
+    p.add_argument("--language", default="DE", choices=["DE", "EN"], help="Language for G2P (default: DE).")
+    p.add_argument("--force", action="store_true", help="Recompute even if cache files already exist.")
     args = p.parse_args()
 
     rows = _read_metadata(args.metadata)
@@ -52,11 +49,7 @@ def main():
             print(f"[{i}] missing wav: {wav_path}", file=sys.stderr)
             failed += 1
             continue
-        if (
-            not args.force
-            and os.path.exists(_spec_path(wav_path))
-            and os.path.exists(_phones_path(wav_path))
-        ):
+        if not args.force and os.path.exists(_spec_path(wav_path)) and os.path.exists(_phones_path(wav_path)):
             skipped += 1
             continue
         try:

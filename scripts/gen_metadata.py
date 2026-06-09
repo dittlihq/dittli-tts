@@ -7,6 +7,7 @@ model was trained against. The JS runtime reads this file (next to the
 Usage:
     python scripts/gen_metadata.py [out_dir]
 """
+
 from __future__ import annotations
 
 import json
@@ -55,6 +56,7 @@ def _resolve_en_symbols(en_checkpoint: str | None = None) -> list:
     """Use the checkpoint's actual vocab size to pick the right symbol list."""
     if en_checkpoint:
         import torch
+
         ckpt = torch.load(en_checkpoint, map_location="cpu", weights_only=False)
         n_vocab = ckpt["model"]["enc_p.emb.weight"].shape[0]
         if n_vocab == len(list(new_symbols)):
@@ -68,10 +70,10 @@ def _resolve_en_symbols(en_checkpoint: str | None = None) -> list:
 
 def main() -> None:
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("out_dir", nargs="?", default=None, help="(unused, kept for compat)")
-    parser.add_argument("--en-checkpoint", default=None,
-                        help="Path to English G.pth to detect actual vocab size")
+    parser.add_argument("--en-checkpoint", default=None, help="Path to English G.pth to detect actual vocab size")
     args = parser.parse_args()
 
     targets = {
@@ -94,8 +96,10 @@ def main() -> None:
         meta = build(lang, phoneme_set, spk2id, symbols)
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(meta, f, ensure_ascii=False, indent=2)
-        print(f"Wrote {out_path} (lang_id={meta['language_id']}, "
-              f"tone_offset={meta['tone_offset']}, n_symbols={len(meta['symbols'])})")
+        print(
+            f"Wrote {out_path} (lang_id={meta['language_id']}, "
+            f"tone_offset={meta['tone_offset']}, n_symbols={len(meta['symbols'])})"
+        )
 
 
 if __name__ == "__main__":

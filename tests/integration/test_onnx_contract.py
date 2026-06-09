@@ -3,6 +3,7 @@
 Uses a random-weight model (no checkpoint needed) to verify that what
 the export pipeline writes is exactly what OnnxDittliTTS can load.
 """
+
 from __future__ import annotations
 
 import json
@@ -19,7 +20,7 @@ def exported_onnx(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """Build a tiny random-weight model, export to ONNX, and write the sidecar."""
     import torch
 
-    from dittli_tts.inference.export import _OnnxWrapper, _build_metadata, _resolve_symbols
+    from dittli_tts.inference.export import _build_metadata, _OnnxWrapper, _resolve_symbols
     from dittli_tts.models.synthesizer import VoiceSynthesizer
     from dittli_tts.text.symbols import language_id_map, symbols
     from dittli_tts.utils.config import (
@@ -33,8 +34,11 @@ def exported_onnx(tmp_path_factory: pytest.TempPathFactory) -> Path:
     onnx_path = tmp / "dittli.onnx"
 
     model = VoiceSynthesizer(
-        len(symbols), SPEC_CHANNELS, SEGMENT_FRAMES,
-        n_speakers=N_SPEAKERS, **MODEL_PARAMS,
+        len(symbols),
+        SPEC_CHANNELS,
+        SEGMENT_FRAMES,
+        n_speakers=N_SPEAKERS,
+        **MODEL_PARAMS,
     )
     model.eval()
     wrapper = _OnnxWrapper(model)
@@ -63,16 +67,26 @@ def exported_onnx(tmp_path_factory: pytest.TempPathFactory) -> Path:
             opset_version=14,
             dynamo=False,
             do_constant_folding=True,
-            input_names=["x", "x_lengths", "sid", "tone", "language", "bert", "ja_bert",
-                         "noise_scale", "noise_scale_w", "length_scale"],
+            input_names=[
+                "x",
+                "x_lengths",
+                "sid",
+                "tone",
+                "language",
+                "bert",
+                "ja_bert",
+                "noise_scale",
+                "noise_scale_w",
+                "length_scale",
+            ],
             output_names=["audio"],
             dynamic_axes={
-                "x":        {0: "batch_size", 1: "text_length"},
-                "tone":     {0: "batch_size", 1: "text_length"},
+                "x": {0: "batch_size", 1: "text_length"},
+                "tone": {0: "batch_size", 1: "text_length"},
                 "language": {0: "batch_size", 1: "text_length"},
-                "bert":     {0: "batch_size", 2: "text_length"},
-                "ja_bert":  {0: "batch_size", 2: "text_length"},
-                "audio":    {0: "batch_size", 2: "audio_length"},
+                "bert": {0: "batch_size", 2: "text_length"},
+                "ja_bert": {0: "batch_size", 2: "text_length"},
+                "audio": {0: "batch_size", 2: "audio_length"},
             },
         )
 
@@ -93,8 +107,18 @@ def test_export_produces_loadable_onnx(exported_onnx: Path):
     # Will raise if the graph is malformed
     sess = ort.InferenceSession(str(exported_onnx), providers=["CPUExecutionProvider"])
     input_names = {inp.name for inp in sess.get_inputs()}
-    assert {"x", "x_lengths", "sid", "tone", "language", "bert",
-            "ja_bert", "noise_scale", "noise_scale_w", "length_scale"} == input_names
+    assert {
+        "x",
+        "x_lengths",
+        "sid",
+        "tone",
+        "language",
+        "bert",
+        "ja_bert",
+        "noise_scale",
+        "noise_scale_w",
+        "length_scale",
+    } == input_names
     output_names = {out.name for out in sess.get_outputs()}
     assert output_names == {"audio"}
 

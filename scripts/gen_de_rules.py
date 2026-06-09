@@ -8,6 +8,7 @@ The top-level `dittli_tts/__init__.py` eagerly imports torch, which we don't
 want as a build-time dependency for emitting the JSON. We register an empty
 package shim before importing the text submodule.
 """
+
 from __future__ import annotations
 
 import json
@@ -59,14 +60,14 @@ def main(out_path: str) -> None:
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
-    print(f"Wrote {out_path}: "
-          f"{len(payload['rules'])} rules, "
-          f"{len(payload['exceptions'])} exceptions, "
-          f"{len(payload['abbreviations'])} abbreviations.")
+    print(
+        f"Wrote {out_path}: "
+        f"{len(payload['rules'])} rules, "
+        f"{len(payload['exceptions'])} exceptions, "
+        f"{len(payload['abbreviations'])} abbreviations."
+    )
 
 
 if __name__ == "__main__":
-    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-        ROOT, "packages", "tts-de", "src", "g2p_de_rules.json"
-    )
+    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "packages", "tts-de", "src", "g2p_de_rules.json")
     main(out)

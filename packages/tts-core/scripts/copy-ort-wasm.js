@@ -9,6 +9,12 @@
  * We ship only the CPU (`wasm` execution provider) variant. The JSEP
  * variant routes WebGPU kernels through JS — we don't use WebGPU, so
  * shipping it would just double the cold-cache cost.
+ *
+ * This pairs with `src/ort.js` importing `onnxruntime-web/wasm` (not the
+ * default entry, whose loader references the jsep binary): the subpath's
+ * loader fetches exactly the non-jsep `ort-wasm-simd-threaded.wasm` copied
+ * here. Keep the two in sync — shipping a wasm the loader never requests
+ * (or vice versa) is the bug this layout avoids.
  */
 
 import { copyFileSync, existsSync, mkdirSync } from "node:fs";

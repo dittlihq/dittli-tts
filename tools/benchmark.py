@@ -2,6 +2,7 @@
 Fair benchmark: DittliTTS vs Piper vs Kokoro ONNX vs KittenTTS nano/mini vs Pocket-TTS vs Supertonic
 All CPU-only, same sentence, same warmup+timing protocol.
 """
+
 import os
 import sys
 import tempfile
@@ -18,12 +19,13 @@ np.load = lambda *a, **kw: _orig_np_load(*a, **{**kw, "allow_pickle": True})
 sys.path.insert(0, r"c:\Users\VALTEC-07\Desktop\dittli-tts")
 os.chdir(r"c:\Users\VALTEC-07\Desktop\dittli-tts")
 
-TEXT     = "The weather is nice today, and I feel very relaxed."
+TEXT = "The weather is nice today, and I feel very relaxed."
 N_WARMUP = 5
-N_RUNS   = 20
-TMP      = os.path.join(tempfile.gettempdir(), "_bench_{}.wav")
+N_RUNS = 20
+TMP = os.path.join(tempfile.gettempdir(), "_bench_{}.wav")
 
 results = {}
+
 
 def bench(name, fn_warmup, fn_run, get_audio_path):
     """Generic benchmark runner. Uses MEDIAN of N_RUNS for stability."""
@@ -41,8 +43,10 @@ def bench(name, fn_warmup, fn_run, get_audio_path):
     audio_secs = len(audio_data) / sr
     med = np.median(times)
     std = np.std(times)
-    print(f"  {name}: median={med*1000:.0f}ms +/-{std*1000:.0f}ms | {audio_secs:.2f}s audio | {audio_secs/med:.1f}x RT")
-    return dict(ttfa=ttfa, total=med, audio=audio_secs, rtfx=audio_secs/med)
+    print(
+        f"  {name}: median={med * 1000:.0f}ms +/-{std * 1000:.0f}ms | {audio_secs:.2f}s audio | {audio_secs / med:.1f}x RT"
+    )
+    return dict(ttfa=ttfa, total=med, audio=audio_secs, rtfx=audio_secs / med)
 
 
 # ── 1. DittliTTS (PyTorch) ──────────────────────────────────────────────────────
@@ -67,9 +71,9 @@ try:
     from dittli_tts.text import phonemes_to_ids
     from dittli_tts.text.english import grapheme_to_phoneme, normalize_text
     from dittli_tts.utils.config import ADD_BLANK, SPK2ID
-    
+
     onnx_sess = ort.InferenceSession("dittli.onnx", providers=["CPUExecutionProvider"])
-    
+
     def run_tiny_onnx(tag):
         # Text to phonemes
         normalized = normalize_text(TEXT)
@@ -79,7 +83,7 @@ try:
             phone_ids = commons.insert_blanks(phone_ids, 0)
             tone_ids = commons.insert_blanks(tone_ids, 0)
             lang_ids = commons.insert_blanks(lang_ids, 0)
-            
+
         x = np.array([phone_ids], dtype=np.int64)
         x_lengths = np.array([len(phone_ids)], dtype=np.int64)
         sid = np.array([SPK2ID["MALE"]], dtype=np.int64)
@@ -92,15 +96,22 @@ try:
         l_scale = np.array([1.0], dtype=np.float32)
 
         onnx_inputs = {
-            "x": x, "x_lengths": x_lengths, "sid": sid, "tone": tone, "language": language,
-            "bert": bert, "ja_bert": ja_bert,
-            "noise_scale": n_scale, "noise_scale_w": n_scale_w, "length_scale": l_scale
+            "x": x,
+            "x_lengths": x_lengths,
+            "sid": sid,
+            "tone": tone,
+            "language": language,
+            "bert": bert,
+            "ja_bert": ja_bert,
+            "noise_scale": n_scale,
+            "noise_scale_w": n_scale_w,
+            "length_scale": l_scale,
         }
-        
+
         out = onnx_sess.run(None, onnx_inputs)[0]
         audio = out[0, 0]
         sf.write(TMP.format(tag), audio, 44100)
-        
+
     results["DittliTTS (ONNX)"] = bench(
         "DittliTTS-ONNX",
         lambda: run_tiny_onnx("tonnx_w"),
@@ -111,16 +122,20 @@ except Exception as e:
     print(f"  DittliTTS ONNX FAILED: {e}")
 
 
-
 # ── 2. Piper ─────────────────────────────────────────────────────────────────
 print("\n[2] Piper (en_US-lessac-medium)...")
 try:
     from piper import PiperVoice
+
     pv = PiperVoice.load(r"models\piper\en_US-lessac-medium.onnx", use_cuda=False)
+
     def run_piper(tag):
         with wave.open(TMP.format(tag), "wb") as wf:
-            wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(pv.config.sample_rate)
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(pv.config.sample_rate)
             pv.synthesize_wav(TEXT, wf)
+
     results["Piper (medium, ONNX)"] = bench(
         "Piper", lambda: run_piper("piper_w"), lambda i: run_piper(f"piper{i}"), lambda i: TMP.format(f"piper{i}")
     )
@@ -132,10 +147,13 @@ except Exception as e:
 print("\n[3] Kokoro ONNX...")
 try:
     from kokoro_onnx import Kokoro
+
     kokoro = Kokoro(r"models\kokoro\kokoro-v0_19.onnx", r"models\kokoro\voices.npz")
+
     def run_kokoro(tag):
         samples, sr = kokoro.create(TEXT, voice="af_bella", speed=1.0, lang="en-us")
         sf.write(TMP.format(tag), samples, sr)
+
     results["Kokoro ONNX (82M)"] = bench(
         "Kokoro", lambda: run_kokoro("kok_w"), lambda i: run_kokoro(f"kok{i}"), lambda i: TMP.format(f"kok{i}")
     )
@@ -147,12 +165,18 @@ except Exception as e:
 print("\n[4] KittenTTS nano...")
 try:
     from kittentts import KittenTTS
+
     kitten_nano = KittenTTS("KittenML/kitten-tts-nano-0.8")
+
     def run_kitten_nano(tag):
         audio = kitten_nano.generate(TEXT, voice="expr-voice-5-m")
         sf.write(TMP.format(tag), audio, 24000)
+
     results["KittenTTS nano"] = bench(
-        "KittenTTS-nano", lambda: run_kitten_nano("kn_w"), lambda i: run_kitten_nano(f"kn{i}"), lambda i: TMP.format(f"kn{i}")
+        "KittenTTS-nano",
+        lambda: run_kitten_nano("kn_w"),
+        lambda i: run_kitten_nano(f"kn{i}"),
+        lambda i: TMP.format(f"kn{i}"),
     )
 except Exception as e:
     print(f"  KittenTTS nano FAILED: {e}")
@@ -162,12 +186,18 @@ except Exception as e:
 print("\n[5] KittenTTS mini...")
 try:
     from kittentts import KittenTTS
+
     kitten_mini = KittenTTS("KittenML/kitten-tts-mini-0.8")
+
     def run_kitten_mini(tag):
         audio = kitten_mini.generate(TEXT, voice="expr-voice-5-m")
         sf.write(TMP.format(tag), audio, 24000)
+
     results["KittenTTS mini"] = bench(
-        "KittenTTS-mini", lambda: run_kitten_mini("km_w"), lambda i: run_kitten_mini(f"km{i}"), lambda i: TMP.format(f"km{i}")
+        "KittenTTS-mini",
+        lambda: run_kitten_mini("km_w"),
+        lambda i: run_kitten_mini(f"km{i}"),
+        lambda i: TMP.format(f"km{i}"),
     )
 except Exception as e:
     print(f"  KittenTTS mini FAILED: {e}")
@@ -178,11 +208,14 @@ print("\n[6] Pocket-TTS...")
 try:
     import scipy.io.wavfile as wavfile
     from pocket_tts import TTSModel
+
     pocket = TTSModel.load_model()
     voice_state = pocket.get_state_for_audio_prompt("alba")
+
     def run_pocket(tag):
         audio = pocket.generate_audio(voice_state, TEXT)
         wavfile.write(TMP.format(tag), pocket.sample_rate, audio.numpy())
+
     results["Pocket-TTS"] = bench(
         "Pocket-TTS", lambda: run_pocket("pt_w"), lambda i: run_pocket(f"pt{i}"), lambda i: TMP.format(f"pt{i}")
     )
@@ -229,36 +262,39 @@ try:
 
     # Load 4 ONNX sessions
     opts = ort.SessionOptions()
-    _dp  = ort.InferenceSession(os.path.join(SUPER_DIR, "onnx", "duration_predictor.onnx"), opts, ["CPUExecutionProvider"])
-    _te  = ort.InferenceSession(os.path.join(SUPER_DIR, "onnx", "text_encoder.onnx"),       opts, ["CPUExecutionProvider"])
-    _ve  = ort.InferenceSession(os.path.join(SUPER_DIR, "onnx", "vector_estimator.onnx"),   opts, ["CPUExecutionProvider"])
-    _voc = ort.InferenceSession(os.path.join(SUPER_DIR, "onnx", "vocoder.onnx"),            opts, ["CPUExecutionProvider"])
+    _dp = ort.InferenceSession(
+        os.path.join(SUPER_DIR, "onnx", "duration_predictor.onnx"), opts, ["CPUExecutionProvider"]
+    )
+    _te = ort.InferenceSession(os.path.join(SUPER_DIR, "onnx", "text_encoder.onnx"), opts, ["CPUExecutionProvider"])
+    _ve = ort.InferenceSession(os.path.join(SUPER_DIR, "onnx", "vector_estimator.onnx"), opts, ["CPUExecutionProvider"])
+    _voc = ort.InferenceSession(os.path.join(SUPER_DIR, "onnx", "vocoder.onnx"), opts, ["CPUExecutionProvider"])
 
     # Load config + voice style
     with open(os.path.join(SUPER_DIR, "onnx", "tts.json")) as f:
         _cfg = json.load(f)
-    _sr   = _cfg["ae"]["sample_rate"]
-    _bcs  = _cfg["ae"]["base_chunk_size"]
-    _ccf  = _cfg["ttl"]["chunk_compress_factor"]
+    _sr = _cfg["ae"]["sample_rate"]
+    _bcs = _cfg["ae"]["base_chunk_size"]
+    _ccf = _cfg["ttl"]["chunk_compress_factor"]
     _ldim = _cfg["ttl"]["latent_dim"]
 
     with open(os.path.join(SUPER_DIR, "voice_styles", "M1.json")) as f:
         _vs = json.load(f)
 
     def _load_style(vs):
-        td = vs["style_ttl"]["dims"];  dd = vs["style_dp"]["dims"]
+        td = vs["style_ttl"]["dims"]
+        dd = vs["style_dp"]["dims"]
         ttl = np.array(vs["style_ttl"]["data"], np.float32).reshape(td[1], td[2])[np.newaxis]
-        dp  = np.array(vs["style_dp"]["data"],  np.float32).reshape(dd[1], dd[2])[np.newaxis]
+        dp = np.array(vs["style_dp"]["data"], np.float32).reshape(dd[1], dd[2])[np.newaxis]
         return ttl, dp
 
     _style_ttl, _style_dp = _load_style(_vs)
 
-    _TOTAL_STEPS = 2   # match Supertonic's RTF benchmark setting (2 steps)
+    _TOTAL_STEPS = 2  # match Supertonic's RTF benchmark setting (2 steps)
     _SPEED = 1.05
 
     def run_supertonic(tag):
         ids = _text_to_ids(TEXT, "en")
-        text_ids = ids[np.newaxis]                                  # [1, T]
+        text_ids = ids[np.newaxis]  # [1, T]
         t_len = np.array([len(ids)], dtype=np.int64)
         text_mask = _length_to_mask(t_len)
 
@@ -275,12 +311,18 @@ try:
         total_s = np.array([_TOTAL_STEPS], np.float32)
         for step in range(_TOTAL_STEPS):
             cur_s = np.array([step], np.float32)
-            xt, *_ = _ve.run(None, {
-                "noisy_latent": xt, "text_emb": text_emb,
-                "style_ttl": _style_ttl, "text_mask": text_mask,
-                "latent_mask": latent_mask,
-                "current_step": cur_s, "total_step": total_s,
-            })
+            xt, *_ = _ve.run(
+                None,
+                {
+                    "noisy_latent": xt,
+                    "text_emb": text_emb,
+                    "style_ttl": _style_ttl,
+                    "text_mask": text_mask,
+                    "latent_mask": latent_mask,
+                    "current_step": cur_s,
+                    "total_step": total_s,
+                },
+            )
 
         wav, *_ = _voc.run(None, {"latent": xt})
         trim_len = int(dur[0] * _sr)
@@ -296,26 +338,28 @@ try:
 except FileNotFoundError as e:
     print(f"  Supertonic SKIPPED: model file not found — {e}")
 except Exception as e:
-    import traceback; traceback.print_exc()
+    import traceback
+
+    traceback.print_exc()
     print(f"  Supertonic FAILED: {e}")
 
 
 # ── Results Table ─────────────────────────────────────────────────────────────
 W = 70
-print("\n" + "="*W)
-print(f"  TTS Benchmark (CPU) — \"{TEXT}\"")
-print("="*W)
+print("\n" + "=" * W)
+print(f'  TTS Benchmark (CPU) — "{TEXT}"')
+print("=" * W)
 print(f"  {'ENGINE':<24} | {'TTFA(ms)':>8} | {'TOTAL(s)':>8} | {'AUDIO(s)':>8} | RTFx")
-print("-"*W)
+print("-" * W)
 for name, r in results.items():
     mark = " 🏆" if name.startswith("DittliTTS") else ""
     print(f"  {name:<24} | {r['ttfa']:>8.0f} | {r['total']:>8.3f} | {r['audio']:>8.3f} | {r['rtfx']:.1f}x{mark}")
-print("="*W)
+print("=" * W)
 
 with open("benchmark_results_fair.txt", "w", encoding="utf-8") as f:
     f.write(f"TTS CPU Benchmark — {TEXT}\n\n")
     f.write(f"{'ENGINE':<24} | {'TTFA(ms)':>8} | {'TOTAL(s)':>8} | {'AUDIO(s)':>8} | RTFx\n")
-    f.write("-"*W + "\n")
+    f.write("-" * W + "\n")
     for name, r in results.items():
         f.write(f"{name:<24} | {r['ttfa']:>8.0f} | {r['total']:>8.3f} | {r['audio']:>8.3f} | {r['rtfx']:.1f}x\n")
 print("Saved to benchmark_results_fair.txt")

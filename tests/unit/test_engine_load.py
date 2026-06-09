@@ -1,4 +1,5 @@
 """Tests for load_engine checkpoint loading behaviour."""
+
 from __future__ import annotations
 
 import pytest
@@ -22,9 +23,7 @@ def test_load_engine_pads_short_embedding(tmp_path):
     n_current = len(symbols)
     n_old = n_current - 1  # simulate a pre-extension symbol table
 
-    old_model = VoiceSynthesizer(
-        n_old, SPEC_CHANNELS, SEGMENT_FRAMES, n_speakers=N_SPEAKERS, **MODEL_PARAMS
-    )
+    old_model = VoiceSynthesizer(n_old, SPEC_CHANNELS, SEGMENT_FRAMES, n_speakers=N_SPEAKERS, **MODEL_PARAMS)
     ckpt_path = tmp_path / "G_old.pth"
     torch.save({"model": old_model.state_dict()}, str(ckpt_path))
 
@@ -34,6 +33,4 @@ def test_load_engine_pads_short_embedding(tmp_path):
     new_emb = engine.enc_p.emb.weight.detach()
 
     assert new_emb.shape[0] == n_current, "loaded model must have current symbol count"
-    assert torch.allclose(old_emb, new_emb[:n_old]), (
-        "rows from the checkpoint must be preserved exactly"
-    )
+    assert torch.allclose(old_emb, new_emb[:n_old]), "rows from the checkpoint must be preserved exactly"

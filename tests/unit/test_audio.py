@@ -1,9 +1,9 @@
 """Audio-utility unit tests on synthetic signals — no wav files needed."""
+
 from __future__ import annotations
 
 import math
 
-import pytest
 import torch
 
 from dittli_tts.audio import (
@@ -48,7 +48,12 @@ def test_spectrogram_finite_and_nonnegative():
 def test_mel_shape_matches_n_mels():
     y = _sine(440.0, SAMPLING_RATE, T_SECONDS).unsqueeze(0)
     mel = mel_spectrogram_torch(
-        y, FILTER_LENGTH, N_MELS, SAMPLING_RATE, HOP_LENGTH, FILTER_LENGTH,
+        y,
+        FILTER_LENGTH,
+        N_MELS,
+        SAMPLING_RATE,
+        HOP_LENGTH,
+        FILTER_LENGTH,
     )
     assert mel.shape[1] == N_MELS
     assert torch.isfinite(mel).all()
@@ -76,7 +81,12 @@ def test_mel_module_matches_functional():
     mod = MelSpectrogram(SAMPLING_RATE, FILTER_LENGTH, N_MELS, HOP_LENGTH, FILTER_LENGTH)
     mel_a = mod(y)
     mel_b = mel_spectrogram_torch(
-        y, FILTER_LENGTH, N_MELS, SAMPLING_RATE, HOP_LENGTH, FILTER_LENGTH,
+        y,
+        FILTER_LENGTH,
+        N_MELS,
+        SAMPLING_RATE,
+        HOP_LENGTH,
+        FILTER_LENGTH,
     )
     assert torch.allclose(mel_a, mel_b)
 
@@ -85,7 +95,12 @@ def test_pure_tone_peak_in_correct_mel_bin():
     """A 440 Hz tone should peak at a low-frequency mel bin, not the high end."""
     y = _sine(440.0, SAMPLING_RATE, 1.0).unsqueeze(0)
     mel = mel_spectrogram_torch(
-        y, FILTER_LENGTH, N_MELS, SAMPLING_RATE, HOP_LENGTH, FILTER_LENGTH,
+        y,
+        FILTER_LENGTH,
+        N_MELS,
+        SAMPLING_RATE,
+        HOP_LENGTH,
+        FILTER_LENGTH,
     )
     avg_per_bin = mel[0].mean(dim=-1)
     peak = int(torch.argmax(avg_per_bin).item())

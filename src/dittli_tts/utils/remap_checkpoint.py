@@ -12,7 +12,7 @@ matches its symbol string, and randomly initializes any rows that correspond
 to genuinely new symbols.
 """
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import torch
 from torch import nn
@@ -23,11 +23,7 @@ PHONEME_EMB_KEY = "enc_p.emb.weight"
 def build_index_map(old_symbols: Sequence[str], new_symbols: Sequence[str]) -> dict[int, int]:
     """Return {old_idx: new_idx} for every symbol present in both lists."""
     new_index = {s: i for i, s in enumerate(new_symbols)}
-    return {
-        old_idx: new_index[sym]
-        for old_idx, sym in enumerate(old_symbols)
-        if sym in new_index
-    }
+    return {old_idx: new_index[sym] for old_idx, sym in enumerate(old_symbols) if sym in new_index}
 
 
 def remap_phoneme_embedding(
@@ -39,8 +35,7 @@ def remap_phoneme_embedding(
     """Build a [len(new_symbols), hidden] tensor by copying matched rows."""
     if old_weight.shape[0] != len(old_symbols):
         raise ValueError(
-            f"Old embedding has {old_weight.shape[0]} rows but old_symbols has "
-            f"{len(old_symbols)}. They must match."
+            f"Old embedding has {old_weight.shape[0]} rows but old_symbols has {len(old_symbols)}. They must match."
         )
     hidden = old_weight.shape[1]
     new_weight = torch.empty(len(new_symbols), hidden, dtype=old_weight.dtype)
@@ -68,9 +63,7 @@ def remap_state_dict(
             f"{[k for k in state_dict if 'emb' in k]}"
         )
     out = dict(state_dict)
-    out[emb_key] = remap_phoneme_embedding(
-        state_dict[emb_key], old_symbols, new_symbols, init_std=init_std
-    )
+    out[emb_key] = remap_phoneme_embedding(state_dict[emb_key], old_symbols, new_symbols, init_std=init_std)
     return out
 
 

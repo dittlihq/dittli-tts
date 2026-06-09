@@ -10,6 +10,7 @@ and the `thorsten_*` fixtures that skip if the data isn't downloaded.
 
     pytest -m slow
 """
+
 from __future__ import annotations
 
 import math
@@ -71,32 +72,54 @@ def test_training_step_produces_finite_losses(
 
     _ensure_cache(dataset, batch_size)
     batch = collate([dataset[i] for i in range(batch_size)])
-    for k in ("x", "x_lengths", "tone", "language", "spec", "spec_lengths",
-              "wav", "wav_lengths", "sid", "bert", "ja_bert"):
+    for k in (
+        "x",
+        "x_lengths",
+        "tone",
+        "language",
+        "spec",
+        "spec_lengths",
+        "wav",
+        "wav_lengths",
+        "sid",
+        "bert",
+        "ja_bert",
+    ):
         batch[k] = batch[k].to(device)
 
     net_g = VoiceSynthesizer(
-        len(symbols), SPEC_CHANNELS, SEGMENT_FRAMES,
-        n_speakers=1, **MODEL_PARAMS,
+        len(symbols),
+        SPEC_CHANNELS,
+        SEGMENT_FRAMES,
+        n_speakers=1,
+        **MODEL_PARAMS,
     ).to(device)
     net_d = MultiPeriodDiscriminator().to(device)
 
-    (o, l_dur_sdp, l_dur_dp, _attn,
-     ids_slice, _x_mask, y_mask,
-     (_z, z_p, m_p_exp, logs_p_exp, _m_q, logs_q)) = net_g(
-        batch["x"], batch["x_lengths"],
-        batch["spec"], batch["spec_lengths"],
-        batch["sid"], batch["tone"], batch["language"],
-        batch["bert"], batch["ja_bert"],
+    (o, l_dur_sdp, l_dur_dp, _attn, ids_slice, _x_mask, y_mask, (_z, z_p, m_p_exp, logs_p_exp, _m_q, logs_q)) = net_g(
+        batch["x"],
+        batch["x_lengths"],
+        batch["spec"],
+        batch["spec_lengths"],
+        batch["sid"],
+        batch["tone"],
+        batch["language"],
+        batch["bert"],
+        batch["ja_bert"],
     )
     assert torch.isfinite(o).all()
 
-    mel_y_full = spec_to_mel_torch(batch["spec"], FILTER_LENGTH, N_MELS,
-                                   SAMPLING_RATE, F_MIN, F_MAX)
+    mel_y_full = spec_to_mel_torch(batch["spec"], FILTER_LENGTH, N_MELS, SAMPLING_RATE, F_MIN, F_MAX)
     mel_y_slice = commons_extract(mel_y_full, ids_slice, SEGMENT_FRAMES)
     mel_o = mel_spectrogram_torch(
-        o.squeeze(1), FILTER_LENGTH, N_MELS, SAMPLING_RATE,
-        HOP_LENGTH, FILTER_LENGTH, F_MIN, F_MAX,
+        o.squeeze(1),
+        FILTER_LENGTH,
+        N_MELS,
+        SAMPLING_RATE,
+        HOP_LENGTH,
+        FILTER_LENGTH,
+        F_MIN,
+        F_MAX,
     )
     sample_ids = ids_slice * HOP_LENGTH
     sample_size = SEGMENT_FRAMES * HOP_LENGTH
