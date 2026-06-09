@@ -803,3 +803,11 @@ etc.
 21.05.2024
 2,5
 3,14
+TV
+TV-Serie
+FBI
+GPU
+USA
+NASA
+ABC
+USB

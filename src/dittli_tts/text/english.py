@@ -26,6 +26,7 @@ from . import symbols  # noqa: E402
 from .english_utils.abbreviations import expand_abbreviations  # noqa: E402
 from .english_utils.number_norm import normalize_numbers  # noqa: E402
 from .english_utils.time_norm import expand_time_english  # noqa: E402
+from .initialisms import expand_initialisms  # noqa: E402
 
 # Words (\w+) or single punctuation/symbol characters. Replaces a previous
 # dependency on bert-base-uncased's WordPiece tokenizer, which forced a
@@ -212,6 +213,7 @@ def parse_syllables(syllables):
 
 
 def normalize_text(text):
+    text = expand_initialisms(text, "EN")
     text = text.lower()
     text = expand_time_english(text)
     text = normalize_numbers(text)

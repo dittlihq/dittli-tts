@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from .german_utils.abbreviations import expand_abbreviations
 from .german_utils.number_norm import normalize_numbers
+from .initialisms import expand_initialisms
 from .symbols import symbols as _SYMBOLS
 
 # Common loanwords whose pronunciation deviates from German rules.
@@ -323,6 +324,7 @@ def _map_phoneme(ph: str) -> str:
 
 
 def normalize_text(text: str) -> str:
+    text = expand_initialisms(text, "DE")
     text = expand_abbreviations(text)
     text = normalize_numbers(text)
     return text
