@@ -51,6 +51,6 @@
   },
   "homepage": "https://github.com/dittlihq/dittli-tts#readme",
   "dependencies": {
-    "onnxruntime-web": "^1.19.0"
+    "onnxruntime-web": "^1.26.0"
   }
 }

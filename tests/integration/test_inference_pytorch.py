@@ -4,6 +4,7 @@ short phrase, assert the wav output is finite audio of plausible length.
 Heavy: loads ~20 MB checkpoint + bert tokenizer cache. The fixture is
 session-scoped so the load cost is amortised across the suite.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,15 +18,13 @@ def synthesize_fn():
     pytest.importorskip("soundfile")
     import nltk
 
-    for resource in ("taggers/averaged_perceptron_tagger_eng",
-                     "taggers/averaged_perceptron_tagger",
-                     "corpora/cmudict"):
+    for resource in ("taggers/averaged_perceptron_tagger_eng", "taggers/averaged_perceptron_tagger", "corpora/cmudict"):
         try:
             nltk.data.find(resource)
         except LookupError:
-            pytest.skip(f"missing NLTK resource {resource!r}; "
-                        f"run `python -c 'import nltk; nltk.download(\"all\")'`")
+            pytest.skip(f"missing NLTK resource {resource!r}; run `python -c 'import nltk; nltk.download(\"all\")'`")
     from dittli_tts.inference.engine import synthesize
+
     return synthesize
 
 

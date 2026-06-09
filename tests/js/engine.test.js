@@ -6,7 +6,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("onnxruntime-web", () => {
+vi.mock("onnxruntime-web/wasm", () => {
   const calls = { create: [], run: [], release: [] };
   let pending = null;
 
@@ -120,7 +120,7 @@ function fakePack(opts = {}) {
 }
 
 beforeEach(async () => {
-  const ort = await import("onnxruntime-web");
+  const ort = await import("onnxruntime-web/wasm");
   ort.__reset();
 });
 
@@ -244,7 +244,7 @@ describe("Engine.synthesize", () => {
   });
 
   it("aborts an in-flight session.run via Promise.race", async () => {
-    const ort = await import("onnxruntime-web");
+    const ort = await import("onnxruntime-web/wasm");
     const { Engine } = await import("../../packages/tts-core/src/engine.js");
     installFetch({
       "/base/xx/metadata.json": jsonResponse(makeMeta()),
@@ -267,7 +267,7 @@ describe("Engine.synthesize", () => {
   });
 
   it("uses spk2id when speaker is provided", async () => {
-    const ort = await import("onnxruntime-web");
+    const ort = await import("onnxruntime-web/wasm");
     const { Engine } = await import("../../packages/tts-core/src/engine.js");
     installFetch({
       "/base/xx/metadata.json": jsonResponse(makeMeta({ spk2id: { ALICE: 3, BOB: 7 } })),
@@ -287,7 +287,7 @@ describe("Engine.synthesize", () => {
 
 describe("Engine.dispose", () => {
   it("releases the underlying session", async () => {
-    const ort = await import("onnxruntime-web");
+    const ort = await import("onnxruntime-web/wasm");
     const { Engine } = await import("../../packages/tts-core/src/engine.js");
     installFetch({
       "/base/xx/metadata.json": jsonResponse(makeMeta()),

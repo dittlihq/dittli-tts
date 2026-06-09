@@ -1,4 +1,5 @@
 """ONNX Runtime inference engine for DittliTTS (single-file export)."""
+
 import os
 
 import numpy as np
@@ -20,11 +21,7 @@ except ImportError:
 
 
 def _build_session(path: str, use_gpu: bool = False):
-    providers = (
-        ["CUDAExecutionProvider", "CPUExecutionProvider"]
-        if use_gpu else
-        ["CPUExecutionProvider"]
-    )
+    providers = ["CUDAExecutionProvider", "CPUExecutionProvider"] if use_gpu else ["CPUExecutionProvider"]
     opts = ort.SessionOptions()
     opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     opts.intra_op_num_threads = os.cpu_count() or 4
@@ -54,8 +51,8 @@ class OnnxDittliTTS:
 
         if ADD_BLANK:
             phone_ids = commons.insert_blanks(phone_ids, 0)
-            tone_ids  = commons.insert_blanks(tone_ids, 0)
-            lang_ids  = commons.insert_blanks(lang_ids, 0)
+            tone_ids = commons.insert_blanks(tone_ids, 0)
+            lang_ids = commons.insert_blanks(lang_ids, 0)
 
         return phone_ids, tone_ids, lang_ids
 
@@ -77,16 +74,16 @@ class OnnxDittliTTS:
         sid_val = SPK2ID.get(speaker, 0)
 
         feeds = {
-            "x":             np.array(phone_ids, dtype=np.int64)[None, :],
-            "x_lengths":     np.array([T], dtype=np.int64),
-            "sid":           np.array([sid_val], dtype=np.int64),
-            "tone":          np.array(tone_ids, dtype=np.int64)[None, :],
-            "language":      np.array(lang_ids, dtype=np.int64)[None, :],
-            "bert":          np.zeros((1, 1024, T), dtype=np.float32),
-            "ja_bert":       np.zeros((1, 768, T), dtype=np.float32),
-            "noise_scale":   np.array([noise_scale], dtype=np.float32),
+            "x": np.array(phone_ids, dtype=np.int64)[None, :],
+            "x_lengths": np.array([T], dtype=np.int64),
+            "sid": np.array([sid_val], dtype=np.int64),
+            "tone": np.array(tone_ids, dtype=np.int64)[None, :],
+            "language": np.array(lang_ids, dtype=np.int64)[None, :],
+            "bert": np.zeros((1, 1024, T), dtype=np.float32),
+            "ja_bert": np.zeros((1, 768, T), dtype=np.float32),
+            "noise_scale": np.array([noise_scale], dtype=np.float32),
             "noise_scale_w": np.array([noise_scale_w], dtype=np.float32),
-            "length_scale":  np.array([length_scale], dtype=np.float32),
+            "length_scale": np.array([length_scale], dtype=np.float32),
         }
 
         results = self._session.run(None, feeds)
@@ -97,6 +94,7 @@ class OnnxDittliTTS:
             try:
                 import torch
                 import torchaudio
+
                 wav_t = torch.from_numpy(audio_np).unsqueeze(0)
                 audio_np = torchaudio.transforms.Resample(SAMPLING_RATE, output_sr)(wav_t).squeeze(0).numpy()
                 save_sr = output_sr

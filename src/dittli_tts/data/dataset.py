@@ -4,10 +4,10 @@ Expects a metadata file with `filename|transcript` pairs (Thorsten format)
 and a folder of wavs alongside it. Pre-computes spectrogram and phoneme IDs
 on disk so training is I/O bound on the spec tensor only.
 """
+
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 import torch
 from torch.utils.data import Dataset
@@ -19,10 +19,10 @@ from dittli_tts.text.english import grapheme_to_phoneme as en_g2p
 from dittli_tts.text.english import normalize_text as en_normalize
 from dittli_tts.text.german import grapheme_to_phoneme as de_g2p
 from dittli_tts.utils.config import (
-    SAMPLING_RATE,
+    ADD_BLANK,
     FILTER_LENGTH,
     HOP_LENGTH,
-    ADD_BLANK,
+    SAMPLING_RATE,
 )
 
 
@@ -154,8 +154,7 @@ class ThorstenDataset(Dataset):
         if not os.path.exists(spec_path) or not os.path.exists(ph_path):
             if self.require_cache:
                 raise FileNotFoundError(
-                    f"Missing cached features for {wav_path}. "
-                    f"Run dittli_tts.data.preprocess first."
+                    f"Missing cached features for {wav_path}. Run dittli_tts.data.preprocess first."
                 )
             compute_and_cache(wav_path, transcript, self.sr, self.n_fft, self.hop, self.language)
 

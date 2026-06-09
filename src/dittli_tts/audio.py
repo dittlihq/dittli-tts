@@ -4,6 +4,7 @@ Uses torchaudio for spectrograms and mel filterbanks. Hyperparameters come
 from dittli_tts.utils.config so the values match what the model was trained
 with originally (44.1 kHz, n_fft=2048, hop=512, n_mels=128).
 """
+
 from __future__ import annotations
 
 import soundfile as sf
@@ -50,9 +51,7 @@ def spectrogram_torch(
     if y.dim() == 3:
         y = y.squeeze(1)
     pad = (n_fft - hop_size) // 2
-    y = torch.nn.functional.pad(
-        y.unsqueeze(1), (pad, pad), mode="reflect"
-    ).squeeze(1)
+    y = torch.nn.functional.pad(y.unsqueeze(1), (pad, pad), mode="reflect").squeeze(1)
     spec = torch.stft(
         y,
         n_fft=n_fft,
@@ -65,16 +64,14 @@ def spectrogram_torch(
         onesided=True,
         return_complex=True,
     )
-    spec = torch.sqrt(spec.real ** 2 + spec.imag ** 2 + 1e-9)
+    spec = torch.sqrt(spec.real**2 + spec.imag**2 + 1e-9)
     return spec
 
 
 _MEL_BASIS_CACHE: dict[tuple, torch.Tensor] = {}
 
 
-def _mel_basis(
-    n_fft: int, n_mels: int, sr: int, fmin: float, fmax: float, device: torch.device
-) -> torch.Tensor:
+def _mel_basis(n_fft: int, n_mels: int, sr: int, fmin: float, fmax: float, device: torch.device) -> torch.Tensor:
     key = (n_fft, n_mels, sr, fmin, fmax, str(device))
     if key not in _MEL_BASIS_CACHE:
         mel = AF.melscale_fbanks(
@@ -144,8 +141,14 @@ class MelSpectrogram(nn.Module):
 
     def forward(self, y: torch.Tensor) -> torch.Tensor:
         return mel_spectrogram_torch(
-            y, self.n_fft, self.n_mels, self.sr, self.hop_size,
-            self.win_size, self.fmin, self.fmax,
+            y,
+            self.n_fft,
+            self.n_mels,
+            self.sr,
+            self.hop_size,
+            self.win_size,
+            self.fmin,
+            self.fmax,
         )
 
 
@@ -161,12 +164,12 @@ def commons_extract(x, ids_str, segment_size):
         ret = torch.zeros_like(x[:, :segment_size])
         for i in range(x.size(0)):
             idx = max(0, int(ids_str[i].item()))
-            seg = x[i, idx: idx + segment_size]
+            seg = x[i, idx : idx + segment_size]
             ret[i, : seg.size(0)] = seg
         return ret
     ret = torch.zeros_like(x[..., :segment_size])
     for i in range(x.size(0)):
         idx = max(0, int(ids_str[i].item()))
-        seg = x[i, ..., idx: idx + segment_size]
+        seg = x[i, ..., idx : idx + segment_size]
         ret[i, ..., : seg.size(-1)] = seg
     return ret

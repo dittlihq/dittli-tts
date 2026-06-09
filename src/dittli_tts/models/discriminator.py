@@ -3,6 +3,7 @@
 Used during training only — the generator (VoiceSynthesizer) is the only
 component shipped at inference time.
 """
+
 import torch
 from torch import nn
 from torch.nn import Conv1d, Conv2d
@@ -21,13 +22,15 @@ class DiscriminatorP(nn.Module):
         super().__init__()
         self.period = period
         norm = spectral_norm if use_spectral_norm else weight_norm
-        self.convs = nn.ModuleList([
-            norm(Conv2d(1,    32,   (kernel_size, 1), (stride, 1), padding=(_get_padding(kernel_size), 0))),
-            norm(Conv2d(32,   128,  (kernel_size, 1), (stride, 1), padding=(_get_padding(kernel_size), 0))),
-            norm(Conv2d(128,  512,  (kernel_size, 1), (stride, 1), padding=(_get_padding(kernel_size), 0))),
-            norm(Conv2d(512,  1024, (kernel_size, 1), (stride, 1), padding=(_get_padding(kernel_size), 0))),
-            norm(Conv2d(1024, 1024, (kernel_size, 1), 1,           padding=(_get_padding(kernel_size), 0))),
-        ])
+        self.convs = nn.ModuleList(
+            [
+                norm(Conv2d(1, 32, (kernel_size, 1), (stride, 1), padding=(_get_padding(kernel_size), 0))),
+                norm(Conv2d(32, 128, (kernel_size, 1), (stride, 1), padding=(_get_padding(kernel_size), 0))),
+                norm(Conv2d(128, 512, (kernel_size, 1), (stride, 1), padding=(_get_padding(kernel_size), 0))),
+                norm(Conv2d(512, 1024, (kernel_size, 1), (stride, 1), padding=(_get_padding(kernel_size), 0))),
+                norm(Conv2d(1024, 1024, (kernel_size, 1), 1, padding=(_get_padding(kernel_size), 0))),
+            ]
+        )
         self.conv_post = norm(Conv2d(1024, 1, (3, 1), 1, padding=(1, 0)))
 
     def forward(self, x):
@@ -54,14 +57,16 @@ class DiscriminatorS(nn.Module):
     def __init__(self, use_spectral_norm=False):
         super().__init__()
         norm = spectral_norm if use_spectral_norm else weight_norm
-        self.convs = nn.ModuleList([
-            norm(Conv1d(1,    16,   15, 1, padding=7)),
-            norm(Conv1d(16,   64,   41, 4, groups=4,  padding=20)),
-            norm(Conv1d(64,   256,  41, 4, groups=16, padding=20)),
-            norm(Conv1d(256,  1024, 41, 4, groups=64, padding=20)),
-            norm(Conv1d(1024, 1024, 41, 4, groups=256, padding=20)),
-            norm(Conv1d(1024, 1024, 5,  1, padding=2)),
-        ])
+        self.convs = nn.ModuleList(
+            [
+                norm(Conv1d(1, 16, 15, 1, padding=7)),
+                norm(Conv1d(16, 64, 41, 4, groups=4, padding=20)),
+                norm(Conv1d(64, 256, 41, 4, groups=16, padding=20)),
+                norm(Conv1d(256, 1024, 41, 4, groups=64, padding=20)),
+                norm(Conv1d(1024, 1024, 41, 4, groups=256, padding=20)),
+                norm(Conv1d(1024, 1024, 5, 1, padding=2)),
+            ]
+        )
         self.conv_post = norm(Conv1d(1024, 1, 3, 1, padding=1))
 
     def forward(self, x):

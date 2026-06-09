@@ -6,19 +6,42 @@ German has its quirks:
 - 100 = (ein)hundert; 1000 = (ein)tausend
 - Long scale: 1_000_000 = eine Million, 1_000_000_000 = eine Milliarde
 """
+
 import re
 
 _ONES = [
-    "null", "eins", "zwei", "drei", "vier",
-    "fünf", "sechs", "sieben", "acht", "neun",
+    "null",
+    "eins",
+    "zwei",
+    "drei",
+    "vier",
+    "fünf",
+    "sechs",
+    "sieben",
+    "acht",
+    "neun",
 ]
 _TEENS = {
-    10: "zehn", 11: "elf", 12: "zwölf", 13: "dreizehn", 14: "vierzehn",
-    15: "fünfzehn", 16: "sechzehn", 17: "siebzehn", 18: "achtzehn", 19: "neunzehn",
+    10: "zehn",
+    11: "elf",
+    12: "zwölf",
+    13: "dreizehn",
+    14: "vierzehn",
+    15: "fünfzehn",
+    16: "sechzehn",
+    17: "siebzehn",
+    18: "achtzehn",
+    19: "neunzehn",
 }
 _TENS = {
-    20: "zwanzig", 30: "dreißig", 40: "vierzig", 50: "fünfzig",
-    60: "sechzig", 70: "siebzig", 80: "achtzig", 90: "neunzig",
+    20: "zwanzig",
+    30: "dreißig",
+    40: "vierzig",
+    50: "fünfzig",
+    60: "sechzig",
+    70: "siebzig",
+    80: "achtzig",
+    90: "neunzig",
 }
 
 

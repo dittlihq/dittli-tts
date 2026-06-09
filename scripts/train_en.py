@@ -9,6 +9,7 @@ Usage:
 
 Omit --init-ckpt to train from random initialisation.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -34,8 +35,7 @@ def main():
     p.add_argument("--metadata", required=True)
     p.add_argument("--wavs-dir", required=True)
     p.add_argument("--ckpt-dir", default="checkpoints_en")
-    p.add_argument("--init-ckpt", default=None,
-                   help="Optional checkpoint for warm-starting (e.g. checkpoints/G.pth).")
+    p.add_argument("--init-ckpt", default=None, help="Optional checkpoint for warm-starting (e.g. checkpoints/G.pth).")
     p.add_argument("--max-steps", type=int, default=TOTAL_STEPS)
     p.add_argument("--batch-size", type=int, default=BATCH_SIZE)
     p.add_argument("--lr", type=float, default=LEARNING_RATE)

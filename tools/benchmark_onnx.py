@@ -3,6 +3,7 @@ Benchmark: PyTorch CPU  vs  ONNX Runtime CPU
 Runs N_WARMUP warm-up then N_RUNS timed iterations.
 Prints RTF (Real-Time Factor) comparison table.
 """
+
 import argparse
 import os
 import tempfile
@@ -13,7 +14,7 @@ import soundfile as sf
 
 TEXT = "The weather is nice today, and I feel very relaxed."
 N_WARMUP = 2
-N_RUNS   = 5
+N_RUNS = 5
 _TMP_WAV = os.path.join(tempfile.gettempdir(), "_dittli_bench.wav")
 
 
@@ -60,8 +61,8 @@ def bench_onnx(onnx_dir: str, use_gpu: bool = False):
 
 def print_table(label, times_list, audio_secs):
     avg = np.mean(times_list)
-    mn  = np.min(times_list)
-    mx  = np.max(times_list)
+    mn = np.min(times_list)
+    mx = np.max(times_list)
     rtf = avg / audio_secs
     speed = audio_secs / avg
     print(f"  {label:<22} | avg {avg:.3f}s | min {mn:.3f}s | max {mx:.3f}s | RTF {rtf:.3f}x  (~{speed:.1f}x RT)")
@@ -72,15 +73,14 @@ def main():
     parser.add_argument("--checkpoint", "-c", default="checkpoints/G.pth")
     parser.add_argument("--onnx-dir", "-o", default="onnx")
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
-    parser.add_argument("--gpu-onnx", action="store_true",
-                        help="Use ONNX CUDAExecutionProvider")
+    parser.add_argument("--gpu-onnx", action="store_true", help="Use ONNX CUDAExecutionProvider")
     args = parser.parse_args()
 
-    print(f"\n{'='*65}")
+    print(f"\n{'=' * 65}")
     print("  DittliTTS Inference Benchmark")
     print(f"  Text : {TEXT}")
     print(f"  Runs : {N_WARMUP} warm-up + {N_RUNS} timed")
-    print(f"{'='*65}\n")
+    print(f"{'=' * 65}\n")
 
     # ── PyTorch ─────────────────────────────────────────────────────────
     print(f"[PyTorch  {args.device.upper()}]")
@@ -88,6 +88,7 @@ def main():
 
     # Measure audio length from a real run
     from dittli_tts.inference.engine import load_engine, synthesize
+
     model = load_engine(args.checkpoint, device=args.device)
     synthesize(TEXT, _TMP_WAV, model, speaker="female", device=args.device)
     audio_data, _ = sf.read(_TMP_WAV)
@@ -100,14 +101,14 @@ def main():
     onnx_audio_secs = n_samples / sr2
 
     # ── Summary ─────────────────────────────────────────────────────────
-    print(f"\n{'-'*65}")
+    print(f"\n{'-' * 65}")
     print(f"  {'Backend':<22} | {'avg':>7} | {'min':>7} | {'max':>7} | RTF")
-    print(f"{'-'*65}")
-    print_table(f"PyTorch {args.device.upper()}", pt_times,  audio_secs)
-    print_table("ONNX CPU",                       ort_times, onnx_audio_secs)
+    print(f"{'-' * 65}")
+    print_table(f"PyTorch {args.device.upper()}", pt_times, audio_secs)
+    print_table("ONNX CPU", ort_times, onnx_audio_secs)
 
     speedup = np.mean(pt_times) / np.mean(ort_times)
-    print(f"{'-'*65}")
+    print(f"{'-' * 65}")
     print(f"  ONNX is  {speedup:.2f}x  {'faster' if speedup > 1 else 'slower'} than PyTorch on {args.device.upper()}\n")
 
 

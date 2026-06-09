@@ -5,6 +5,7 @@ Importing the package itself stays lightweight — heavy modules
 G2P) are loaded lazily inside the methods that need them. This keeps
 unit tests and offline tooling fast.
 """
+
 import os
 
 from dittli_tts.text.symbols import symbols as symbols
@@ -19,6 +20,7 @@ class DittliTTS:
 
     def __init__(self, checkpoint_path: str, device: str | None = None):
         import torch  # local: keep package import torch-free
+
         from dittli_tts.inference.engine import load_engine
 
         if device is None:
@@ -30,8 +32,7 @@ class DittliTTS:
         self.device = device
         self.model = load_engine(checkpoint_path, self.device)
 
-    def speak(self, text: str, output_path: str = "output.wav",
-              speaker: str = "MALE", speed: float = 1.0):
+    def speak(self, text: str, output_path: str = "output.wav", speaker: str = "MALE", speed: float = 1.0):
         """Synthesize `text` and write a 44.1 kHz wav to `output_path`."""
         import soundfile as sf
         import torch
@@ -58,8 +59,7 @@ class DittliTTS:
         language = torch.LongTensor(lang_ids).unsqueeze(0).to(self.device)
 
         if speaker not in SPK2ID:
-            print(f"Warning: Speaker '{speaker}' not found, using ID 0. "
-                  f"Available: {list(SPK2ID.keys())}")
+            print(f"Warning: Speaker '{speaker}' not found, using ID 0. Available: {list(SPK2ID.keys())}")
             sid = torch.LongTensor([0]).to(self.device)
         else:
             sid = torch.LongTensor([SPK2ID[speaker]]).to(self.device)
@@ -72,7 +72,13 @@ class DittliTTS:
 
         with torch.no_grad():
             audio, *_ = self.model.infer(
-                x, x_lengths, sid, tone, language, bert, ja_bert,
+                x,
+                x_lengths,
+                sid,
+                tone,
+                language,
+                bert,
+                ja_bert,
                 noise_scale=0.667,
                 noise_scale_w=0.8,
                 length_scale=length_scale,

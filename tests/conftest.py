@@ -3,6 +3,7 @@
 Heavy fixtures (PyTorch model load, ONNX session) are session-scoped so the
 ~10-30 s checkpoint load is paid once for the whole run, not per test.
 """
+
 from __future__ import annotations
 
 import os
@@ -20,6 +21,7 @@ if str(SRC) not in sys.path:
 
 
 # ── Paths ──────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(scope="session")
 def repo_root() -> Path:
@@ -53,6 +55,7 @@ def thorsten_wavs(repo_root: Path) -> Path:
 
 # ── Tooling probes ──────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="session")
 def node_bin() -> str:
     """Resolved absolute path to `node`, or skip the test if unavailable."""
@@ -73,6 +76,7 @@ def node_modules_installed(repo_root: Path, node_bin: str) -> Path:
 
 # ── Heavy session-scoped engine ─────────────────────────────────────────
 
+
 @pytest.fixture(scope="session")
 def pytorch_engine(english_checkpoint: Path):
     """Load the English G.pth once for all tests that need PyTorch inference."""
@@ -86,12 +90,14 @@ def pytorch_engine(english_checkpoint: Path):
 
 # ── Per-test scratch dir ────────────────────────────────────────────────
 
+
 @pytest.fixture
 def out_wav(tmp_path: Path) -> Path:
     return tmp_path / "out.wav"
 
 
 # ── Subprocess helper ───────────────────────────────────────────────────
+
 
 def run(cmd: list[str], cwd: Path | None = None, **kw) -> subprocess.CompletedProcess:
     """subprocess.run wrapper that captures + asserts success and surfaces stderr."""

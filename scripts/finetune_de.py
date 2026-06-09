@@ -17,6 +17,7 @@ Usage:
         --ckpt-dir checkpoints_de/ \
         [--max-steps 100]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -65,8 +66,7 @@ def main():
     p.add_argument("--metadata", required=True)
     p.add_argument("--wavs-dir", required=True)
     p.add_argument("--english-ckpt", default="checkpoints/G.pth")
-    p.add_argument("--old-symbols",
-                   default=os.path.join(ROOT, "checkpoints", "symbols_v1_en.txt"))
+    p.add_argument("--old-symbols", default=os.path.join(ROOT, "checkpoints", "symbols_v1_en.txt"))
     p.add_argument("--ckpt-dir", default="checkpoints_de")
     p.add_argument("--max-steps", type=int, default=TOTAL_STEPS)
     p.add_argument("--batch-size", type=int, default=BATCH_SIZE)
@@ -82,15 +82,16 @@ def main():
     init_g = None
     if args.english_ckpt and os.path.exists(args.english_ckpt):
         if not os.path.exists(args.old_symbols):
-            print(f"[finetune] WARN: {args.old_symbols} missing — fine-tuning "
-                  f"with symbol mismatch will skip the embedding row.")
+            print(
+                f"[finetune] WARN: {args.old_symbols} missing — fine-tuning "
+                f"with symbol mismatch will skip the embedding row."
+            )
             init_g = args.english_ckpt
         else:
             tmp_ckpt = os.path.join(args.ckpt_dir, "_g_remapped.pth")
             init_g = remap_and_save(args.english_ckpt, args.old_symbols, tmp_ckpt)
     else:
-        print(f"[finetune] no English checkpoint at {args.english_ckpt} — "
-              f"training from scratch.")
+        print(f"[finetune] no English checkpoint at {args.english_ckpt} — training from scratch.")
 
     cfg = TrainerConfig(
         metadata_path=args.metadata,
