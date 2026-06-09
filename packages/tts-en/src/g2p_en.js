@@ -1,18 +1,51 @@
 /**
  * English grapheme-to-phoneme.
  * Mirrors dittli_tts/text/english.py: CMU dictionary lookup with a neural G2P
- * fallback (g2p_predict.js) for OOV words.
+ * fallback (encoder.onnx + decoder_step.onnx, run via @dittli/tts-core's
+ * createOnnxG2p) for OOV words.
  *
- * Assets (CMU dict ~5 MB, neural G2P weights ~4 MB) are fetched lazily on
- * first use via `graphemeToPhonemeEN.prepare({ assetBase, signal, onProgress })`.
- * Core calls `prepare()` from inside `Engine.load()` with the consumer's
- * `assetBase` — never at module load.
+ * Assets (CMU dict ~5 MB, G2P graphs ~1.7 MB) are fetched lazily on first use
+ * via `graphemeToPhonemeEN.prepare(...)`. Core calls `prepare()` from inside
+ * `Engine.load()` with the consumer's `assetBase` and injected ORT primitives —
+ * never at module load. The OOV path is async (ORT inference returns a Promise).
  */
 
-import { predict as _g2pPredict, prepare as _prepareG2pPredict } from "./g2p_predict.js";
+import { createOnnxG2p } from "@dittli/tts-core/internal";
 
 let _cmu = null;
 let _cmuPromise = null;
+
+// OOV fallback: encoder.onnx + decoder_step.onnx run on the shared ORT runtime
+// (replaces the old hand-rolled JS GRU in g2p_predict.js). Set by prepare().
+let _onnxPredict = null;
+let _onnxPromise = null;
+
+async function _fetchBytes(url, signal) {
+  const res = await fetch(url, signal ? { signal } : undefined);
+  if (!res.ok) throw new Error(`Failed to fetch ${url} (${res.status})`);
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+async function _loadOnnxG2p({ assetBase, signal, onProgress, ort, executionProviders }) {
+  if (!ort) {
+    throw new Error("graphemeToPhonemeEN.prepare requires injected { ort } (call via Engine.load)");
+  }
+  const [encoderBytes, decoderBytes, vocab] = await Promise.all([
+    _fetchBytes(`${assetBase}en/g2p_encoder.onnx`, signal),
+    _fetchBytes(`${assetBase}en/g2p_decoder_step.onnx`, signal),
+    fetch(`${assetBase}en/g2p_vocab.json`, signal ? { signal } : undefined).then((r) => r.json()),
+  ]);
+  _onnxPredict = await createOnnxG2p({
+    ort,
+    encoderBytes,
+    decoderBytes,
+    vocab,
+    executionProviders,
+  });
+  if (onProgress) {
+    onProgress({ asset: "g2p_onnx", language: "en", loaded: 1, total: 1 });
+  }
+}
 
 async function _loadCMU({ assetBase, signal, onProgress }) {
   const url = `${assetBase}en/cmudict.json`;
@@ -69,7 +102,7 @@ function _mapPhoneme(ph, symbolSet) {
   return ph;
 }
 
-export function graphemeToPhonemeEN(text, opts = {}) {
+export async function graphemeToPhonemeEN(text, opts = {}) {
   const { symbolSet = null, padStartEnd = true } = opts;
   text = text.toLowerCase().trim();
   const words = text.split(/\s+/).filter((w) => w.length > 0);
@@ -109,7 +142,7 @@ export function graphemeToPhonemeEN(text, opts = {}) {
             partPhones.push(...ph);
             partTones.push(...tn);
           } else {
-            const preds = _g2pPredict(part);
+            const preds = _onnxPredict ? await _onnxPredict(part) : null;
             if (preds && preds.length > 0) {
               for (const phn of preds) {
                 const [ph2, tn2] = _parsePhone(phn);
@@ -142,7 +175,7 @@ export function graphemeToPhonemeEN(text, opts = {}) {
       }
 
       if (!resolved) {
-        const preds = _g2pPredict(core);
+        const preds = _onnxPredict ? await _onnxPredict(core) : null;
         if (preds && preds.length > 0) {
           const [ph, tn] = _parseSyllables([preds]);
           for (const p of ph) allPhones.push(_mapPhoneme(p, symbolSet));
@@ -178,7 +211,7 @@ export function graphemeToPhonemeEN(text, opts = {}) {
 }
 
 graphemeToPhonemeEN.prepare = async function prepare(opts) {
-  const { assetBase, signal, onProgress } = opts || {};
+  const { assetBase, signal, onProgress, ort, executionProviders } = opts || {};
   if (!assetBase) {
     throw new Error("graphemeToPhonemeEN.prepare requires { assetBase }");
   }
@@ -191,6 +224,13 @@ graphemeToPhonemeEN.prepare = async function prepare(opts) {
             _cmu = d;
           });
         })(),
-    _prepareG2pPredict({ assetBase, signal, onProgress }),
+    _onnxPredict
+      ? Promise.resolve()
+      : (() => {
+          if (!_onnxPromise) {
+            _onnxPromise = _loadOnnxG2p({ assetBase, signal, onProgress, ort, executionProviders });
+          }
+          return _onnxPromise;
+        })(),
   ]);
 };

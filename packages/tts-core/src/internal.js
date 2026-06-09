@@ -3,6 +3,8 @@
  * via `@dittli/tts-core/internal`, but not part of the documented API.
  */
 
+export { createOnnxG2p } from "./g2p_onnx.js";
+
 export const _LANG_REGISTRY = new Map();
 
 /**

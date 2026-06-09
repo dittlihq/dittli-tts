@@ -1,7 +1,7 @@
 export type LanguageCode = string;
 
 export interface AssetProgressEvent {
-  asset: "model" | "metadata" | "cmudict" | "g2p_model";
+  asset: "model" | "metadata" | "cmudict" | "g2p_onnx";
   language?: string;
   loaded: number;
   total: number;
@@ -64,12 +64,19 @@ export interface G2PPrepareOptions {
   assetBase: string;
   signal?: AbortSignal;
   onProgress?: (e: AssetProgressEvent) => void;
+  /** ORT primitives injected by the engine so a pack can run a neural G2P. */
+  ort?: {
+    createSession: (bytes: Uint8Array, opts?: object) => Promise<unknown>;
+    runSession: (session: unknown, feeds: object, signal?: AbortSignal) => Promise<unknown>;
+    tensor: (type: string, data: unknown, shape: number[]) => unknown;
+  };
+  executionProviders?: string[];
 }
 
 export type G2PFunction = ((
   text: string,
   opts?: { symbolSet?: Set<string>; padStartEnd?: boolean },
-) => G2PResult) & {
+) => G2PResult | Promise<G2PResult>) & {
   /** Loader for assets that should be fetched on first use. */
   prepare?: (opts: G2PPrepareOptions) => Promise<void>;
 };
