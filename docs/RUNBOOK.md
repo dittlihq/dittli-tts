@@ -101,6 +101,25 @@ the browser smoke after re-export.
 
 Best done as **one fine-tune** combining Step 2 + Step 3.
 
+### Cost / Modal budget
+
+Grounded in the measured German run: **100K steps ≈ 10.2 h on an A10G
+(~$1.10/hr) ≈ $11.20**; the `--max-steps 200` smoke was ~$0.10–0.30.
+
+| Work | Per language | Both |
+|------|-------------|------|
+| Step 1 | $0 (no training) | $0 |
+| Step 2+3 as one combined fine-tune (~50–100K steps, warm-started) | ~$6–12 | ~$12–24 |
+| + realistic iteration (smoke + a re-run or two) | +50–100% | ~$25–40 |
+
+**A ~$30 budget covers one clean combined fine-tune of both languages with a
+thin margin** — a failed run or a tuning round can exceed it; budget $40–50 if
+you expect to iterate. To stay inside $30:
+- calibrate on **one** language first (~$11–15) before the second;
+- always `--max-steps 200` smoke first (caught the German warm-start bug);
+- persist a Modal data volume to skip the ~13 min cold-start preprocess;
+- do Step 2 + Step 3 in a **single** fine-tune, not two passes.
+
 ---
 
 ## Open follow-ups (no training)
