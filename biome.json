@@ -12,8 +12,8 @@
       "!**/g2p_model.json",
       "!**/g2p_de_rules.json",
       "!**/metadata.json",
-      "!**/ort-wasm/**",
-      "!**/public/tts/**"
+      "!**/ort-wasm",
+      "!**/public/tts"
     ]
   },
   "linter": {
