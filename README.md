@@ -92,11 +92,10 @@ tts.stop();
 
 ### Verbose ORT logging
 
-By default the library installs a `console.warn` filter that drops
-ORT's `[W:onnxruntime:...]` messages — monkey-patching `console.warn`
-from a library is normally a sin, but the alternative is ~10 warnings
-per session for non-actionable noise. Pass `{ verbose: true }` to opt
-out.
+By default the library raises ORT's log level to `error`, which drops
+its `[W:onnxruntime:...]` graph-optimisation messages (e.g. "Could not
+find a CPU kernel and hence can't constant fold ...") — ~10 lines of
+non-actionable noise per session. Pass `{ verbose: true }` to keep them.
 
 ### Custom ORT asset location
 

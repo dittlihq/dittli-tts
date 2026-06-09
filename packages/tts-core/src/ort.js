@@ -17,39 +17,23 @@ import * as ort from "onnxruntime-web/wasm";
 import { _abortError } from "./internal.js";
 
 let _ortConfigured = false;
-let _filterInstalled = false;
-
-/**
- * Install a `console.warn` filter that drops ORT's `[W:onnxruntime:...]`
- * messages. Called once per page when `verbose: false`.
- *
- * Yes, monkey-patching `console.warn` from a library is normally a sin.
- * The README documents this; consumers who want the warnings pass
- * `{ verbose: true }`.
- */
-function _installWarnFilter() {
-  if (_filterInstalled) return;
-  _filterInstalled = true;
-  const original = console.warn.bind(console);
-  console.warn = (...args) => {
-    if (args.length > 0 && typeof args[0] === "string" && args[0].startsWith("[W:onnxruntime")) {
-      return;
-    }
-    original(...args);
-  };
-}
+let _verbose = false;
 
 /**
  * Configure ORT once per page. Subsequent calls with the same `wasmPaths`
  * are no-ops; a different `wasmPaths` will overwrite.
  *
- * Note: when `verbose: false`, the `console.warn` filter is installed
- * exactly once per page and **cannot be reverted**. A later call with
- * `verbose: true` will not restore the original `console.warn`; reload
- * the page if you need ORT warnings back during a debugging session.
+ * ORT emits `[W:onnxruntime:...]` graph-optimisation chatter (e.g. "Could
+ * not find a CPU kernel and hence can't constant fold Exp node ...") through
+ * the wasm logger, which emscripten binds to `console.error` — so it can't be
+ * filtered from the JS side without also swallowing genuine errors. Instead we
+ * raise ORT's own log level: at `"error"` the WARNING-level lines are dropped
+ * at the source, while real errors still surface. `createSession` mirrors this
+ * with a matching per-session `logSeverityLevel`.
  */
 export function configureOrt({ wasmPaths, verbose = false } = {}) {
-  if (!verbose) _installWarnFilter();
+  _verbose = verbose;
+  ort.env.logLevel = verbose ? "warning" : "error";
   if (wasmPaths) {
     ort.env.wasm.wasmPaths = wasmPaths;
   }
@@ -63,6 +47,9 @@ export function isOrtConfigured() {
 export async function createSession(modelBytes, opts = {}) {
   return await ort.InferenceSession.create(modelBytes, {
     executionProviders: opts.executionProviders || ["wasm"],
+    // 3 = ERROR. Matches env.logLevel so the graph-optimisation warnings the
+    // optimiser logs during session creation stay suppressed unless verbose.
+    logSeverityLevel: _verbose ? 0 : 3,
   });
 }
 
