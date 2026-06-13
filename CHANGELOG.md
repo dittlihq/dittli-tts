@@ -10,7 +10,14 @@ see [`docs/HISTORY.md`](docs/HISTORY.md).
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-06-09
+
 ### Fixed
+- **`@dittli/tts-en` / `@dittli/tts-de`: acronyms and runs of consecutive
+  uppercase letters are now spelled out** (e.g. "NASA", "API", "USB") instead
+  of producing near-silent or garbled speech. Initialisms are expanded to their
+  spoken letters before phonemisation, in both the JS G2P and the Python
+  front-end.
 - **`@dittli/tts-core`: stop fetching the 25 MB JSEP WASM at runtime.**
   `src/ort.js` imported the default `onnxruntime-web` entry, whose loader
   hard-references `ort-wasm-simd-threaded.jsep.wasm` (~25 MB, WebGPU build)
@@ -19,6 +26,10 @@ see [`docs/HISTORY.md`](docs/HISTORY.md).
   non-jsep `ort-wasm-simd-threaded.wasm` (~12.4 MB) — the binary
   `copy-ort-wasm.js` already ships — and pulls a smaller JS bundle
   (0.39 MB → 0.07 MB). FP16 model is unaffected (stays 4.6 MB).
+- **`@dittli/tts-core`: silence ORT's `[W:onnxruntime:...]` graph-optimisation
+  warnings.** They route through `console.error`, so the old `console.warn`
+  filter never caught them; raised `ort.env.logLevel` (and the per-session
+  `logSeverityLevel`) to `error` instead. Pass `{ verbose: true }` to keep them.
 
 ### Changed
 - `@dittli/tts-core`: bumped `onnxruntime-web` dependency to `^1.26.0`.

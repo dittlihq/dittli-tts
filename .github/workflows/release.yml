@@ -1,0 +1,100 @@
+name: Release (npm)
+
+# Publishes the @dittli/tts-* trio to npm when a v* tag is pushed, using npm
+# Trusted Publishing (OIDC) — no NPM_TOKEN, no stored secret to rotate or leak.
+#
+# The tagged commit must already carry the matching version in all three
+# packages/*/package.json files — the "Verify" step fails the run otherwise.
+# Release flow (from an up-to-date develop):
+#
+#   # bump the three packages + CHANGELOG, commit, then:
+#   git tag v0.6.0
+#   git push origin v0.6.0
+#
+# One-time setup:
+#   1. On npmjs.com, for EACH package (@dittli/tts-core, tts-en, tts-de):
+#      package → Settings → Trusted Publisher → GitHub Actions, with
+#        Organization/owner: dittlihq
+#        Repository:         dittli-tts
+#        Workflow filename:  release.yml
+#        Environment:        npm-publish   (must match `environment:` below)
+#      (Packages must already exist on npm; for a brand-new package do one
+#      manual `npm publish` first, then add the trusted publisher.)
+#   2. GitHub → Settings → Environments → create "npm-publish":
+#      - Required reviewers: the maintainer(s) who may approve a release.
+#      - Deployment branches and tags: restrict to the tag pattern "v*".
+#   3. (Recommended) GitHub → Settings → Rules → Rulesets: protect the "v*"
+#      tag pattern so only maintainers can create a release tag.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# contents: read to checkout; id-token: write is what Trusted Publishing uses
+# to prove this workflow's identity to npm (and to attach provenance).
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+
+    # Gate the publish behind a protected environment that requires a reviewer
+    # to approve before the job runs. Combined with the npm trusted-publisher
+    # config naming this same environment, a stray `v*` tag can neither be
+    # approved by a non-maintainer nor publish without that approval.
+    environment: npm-publish
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted Publishing (OIDC) needs npm >= 11.5.1; Node 24 ships an older
+      # 11.x, so upgrade the CLI before publishing.
+      - name: Upgrade npm for Trusted Publishing
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tag matches package versions
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          for pkg in tts-core tts-en tts-de; do
+            v="$(node -p "require('./packages/$pkg/package.json').version")"
+            if [ "$v" != "$tag" ]; then
+              echo "::error::packages/$pkg is $v but the pushed tag is v$tag"
+              exit 1
+            fi
+          done
+          echo "All three packages are at $tag."
+
+      - name: Run JS tests
+        run: npm run test:js
+
+      # Publish tts-core first: the language packs peer-depend on it. With
+      # Trusted Publishing no token is passed — npm authenticates via the OIDC
+      # id-token and attaches provenance automatically. --access public is
+      # required for the scoped @dittli/* names on a first publish. Each publish
+      # runs that package's prepublishOnly hook (copy ORT WASM + asset check).
+      - name: Publish @dittli/tts-core
+        run: npm publish --workspace=@dittli/tts-core --access public
+
+      - name: Publish @dittli/tts-en
+        run: npm publish --workspace=@dittli/tts-en --access public
+
+      - name: Publish @dittli/tts-de
+        run: npm publish --workspace=@dittli/tts-de --access public

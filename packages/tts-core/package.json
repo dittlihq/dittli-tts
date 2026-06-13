@@ -1,6 +1,6 @@
 {
   "name": "@dittli/tts-core",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "DittliTTS inference engine for the browser — ONNX Runtime Web. Install a language pack (@dittli/tts-en, @dittli/tts-de) alongside this to synthesise speech.",
   "type": "module",
   "main": "src/index.js",
