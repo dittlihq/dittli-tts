@@ -31,10 +31,11 @@ on:
     tags:
       - "v*"
 
-# contents: read to checkout; id-token: write is what Trusted Publishing uses
-# to prove this workflow's identity to npm (and to attach provenance).
+# contents: write to create the GitHub Release for the tag; id-token: write is
+# what Trusted Publishing uses to prove this workflow's identity to npm (and to
+# attach provenance).
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 concurrency:
@@ -98,3 +99,21 @@ jobs:
 
       - name: Publish @dittli/tts-de
         run: npm publish --workspace=@dittli/tts-de --access public
+
+      # Create the GitHub Release only after all three packages published.
+      # Notes come from the matching CHANGELOG.md section (everything between
+      # this version's "## [x.y.z]" heading and the next "## " heading).
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          notes="$(awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { grab = 1; next }
+            grab && /^## / { exit }
+            grab { print }
+          ' CHANGELOG.md)"
+          if [ -z "$notes" ]; then
+            notes="Release $GITHUB_REF_NAME"
+          fi
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "$notes"
